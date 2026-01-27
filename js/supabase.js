@@ -10,7 +10,7 @@ function isSupabaseConfigured() {
 }
 
 // Initialize Supabase client
-let supabase = null;
+let supabaseClient = null;
 
 function initSupabase() {
   if (!isSupabaseConfigured()) {
@@ -18,10 +18,10 @@ function initSupabase() {
     return null;
   }
 
-  if (!supabase && window.supabase) {
-    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  if (!supabaseClient && window.supabase) {
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
-  return supabase;
+  return supabaseClient;
 }
 
 // ============ USERS ============

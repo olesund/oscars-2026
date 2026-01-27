@@ -158,7 +158,8 @@
           showToast(`Welcome, ${result.data.username}!`, 'success');
           showProfile();
         } catch (err) {
-          loginError.textContent = 'An error occurred. Please try again.';
+          console.error('Login error:', err);
+          loginError.textContent = 'Error: ' + (err.message || 'An error occurred. Please try again.');
           loginError.classList.remove('hidden');
         }
       });
