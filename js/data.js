@@ -295,6 +295,129 @@ const OSCAR_DATA = {
       director: 'Unknown',
       nominations: 1,
       poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Perfect+Neighbor'
+    },
+    // Documentary Short Films
+    'all-empty-rooms': {
+      id: 'all-empty-rooms',
+      title: 'All the Empty Rooms',
+      year: 2025,
+      director: 'Joshua Seftel',
+      nominations: 1,
+      type: 'documentary-short'
+    },
+    'armed-only': {
+      id: 'armed-only',
+      title: 'Armed Only with a Camera: The Life and Death of Brent Renaud',
+      year: 2025,
+      director: 'Craig Renaud & Brent Renaud',
+      nominations: 1,
+      type: 'documentary-short'
+    },
+    'children-no-more': {
+      id: 'children-no-more',
+      title: 'Children No More: "Were and Are Gone"',
+      year: 2025,
+      director: 'Hilla Medalia',
+      nominations: 1,
+      type: 'documentary-short'
+    },
+    'devil-busy': {
+      id: 'devil-busy',
+      title: 'The Devil Is Busy',
+      year: 2025,
+      director: 'Geeta Gandbhir & Christalyn Hampton',
+      nominations: 1,
+      type: 'documentary-short'
+    },
+    'perfectly-strangeness': {
+      id: 'perfectly-strangeness',
+      title: 'Perfectly a Strangeness',
+      year: 2025,
+      director: 'Alison McAlpine',
+      nominations: 1,
+      type: 'documentary-short'
+    },
+    // Animated Short Films
+    'butterfly-short': {
+      id: 'butterfly-short',
+      title: 'Papillon (Butterfly)',
+      year: 2025,
+      director: 'Florence Miailhe',
+      nominations: 1,
+      type: 'animated-short'
+    },
+    'forevergreen': {
+      id: 'forevergreen',
+      title: 'Forevergreen',
+      year: 2025,
+      director: 'Nathan Engelhardt & Jeremy Spears',
+      nominations: 1,
+      type: 'animated-short'
+    },
+    'girl-pearls': {
+      id: 'girl-pearls',
+      title: 'The Girl Who Cried Pearls',
+      year: 2025,
+      director: 'Chris Lavis & Maciek Szczerbowski',
+      nominations: 1,
+      type: 'animated-short'
+    },
+    'retirement-plan': {
+      id: 'retirement-plan',
+      title: 'Retirement Plan',
+      year: 2025,
+      director: 'John Kelly',
+      nominations: 1,
+      type: 'animated-short'
+    },
+    'three-sisters': {
+      id: 'three-sisters',
+      title: 'The Three Sisters',
+      year: 2025,
+      director: 'Timur Kognov',
+      nominations: 1,
+      type: 'animated-short'
+    },
+    // Live Action Short Films
+    'butchers-stain': {
+      id: 'butchers-stain',
+      title: "Butcher's Stain",
+      year: 2025,
+      director: 'Meyer Levinson-Blount',
+      nominations: 1,
+      type: 'live-action-short'
+    },
+    'friend-dorothy': {
+      id: 'friend-dorothy',
+      title: 'A Friend of Dorothy',
+      year: 2025,
+      director: 'Lee Knight',
+      nominations: 1,
+      type: 'live-action-short'
+    },
+    'jane-austen': {
+      id: 'jane-austen',
+      title: "Jane Austen's Period Drama",
+      year: 2025,
+      director: 'Steve Pinder & Julia Aks',
+      nominations: 1,
+      type: 'live-action-short'
+    },
+    'the-singers': {
+      id: 'the-singers',
+      title: 'The Singers',
+      year: 2025,
+      director: 'Sam Davis',
+      nominations: 1,
+      type: 'live-action-short'
+    },
+    'two-people': {
+      id: 'two-people',
+      title: 'Two People Exchanging Saliva',
+      year: 2025,
+      director: 'Alexandre Singh & Natalie Musteata',
+      nominations: 1,
+      type: 'live-action-short'
     }
   },
 
@@ -430,33 +553,33 @@ const OSCAR_DATA = {
       id: 'best-documentary-short',
       name: 'Best Documentary Short Film',
       nominees: [
-        { id: 'all-empty-rooms', title: 'All the Empty Rooms' },
-        { id: 'armed-only', title: 'Armed Only with a Camera: The Life and Death of Brent Renaud' },
-        { id: 'children-no-more', title: 'Children No More: \'Were and Are Gone\'' },
-        { id: 'devil-busy', title: 'The Devil is Busy' },
-        { id: 'perfectly-strangeness', title: 'Perfectly a Strangeness' }
+        { movieId: 'all-empty-rooms' },
+        { movieId: 'armed-only' },
+        { movieId: 'children-no-more' },
+        { movieId: 'devil-busy' },
+        { movieId: 'perfectly-strangeness' }
       ]
     },
     'best-animated-short': {
       id: 'best-animated-short',
       name: 'Best Animated Short Film',
       nominees: [
-        { id: 'butterfly-short', title: 'Butterfly' },
-        { id: 'forevergreen', title: 'Forevergreen' },
-        { id: 'girl-pearls', title: 'The Girl Who Cried Pearls' },
-        { id: 'retirement-plan', title: 'Retirement Plan' },
-        { id: 'three-sisters', title: 'The Three Sisters' }
+        { movieId: 'butterfly-short' },
+        { movieId: 'forevergreen' },
+        { movieId: 'girl-pearls' },
+        { movieId: 'retirement-plan' },
+        { movieId: 'three-sisters' }
       ]
     },
     'best-live-action-short': {
       id: 'best-live-action-short',
       name: 'Best Live Action Short Film',
       nominees: [
-        { id: 'butchers-stain', title: 'Butcher\'s Stain' },
-        { id: 'jane-austen', title: 'Jane Austen\'s Period Drama' },
-        { id: 'friend-dorothy', title: 'A Friend of Dorothy' },
-        { id: 'the-singers', title: 'The Singers' },
-        { id: 'two-people', title: 'Two People Exchanging Saliva' }
+        { movieId: 'butchers-stain' },
+        { movieId: 'jane-austen' },
+        { movieId: 'friend-dorothy' },
+        { movieId: 'the-singers' },
+        { movieId: 'two-people' }
       ]
     },
     'best-original-score': {

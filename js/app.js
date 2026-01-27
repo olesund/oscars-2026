@@ -35,34 +35,71 @@ function navigateTo(page, params = {}) {
 }
 
 // Generate poster placeholder using canvas (works offline)
-function generatePosterDataUrl(title) {
+function generatePosterDataUrl(title, type = null) {
   const canvas = document.createElement('canvas');
+  // Short films get a wider aspect ratio (16:9ish)
+  const isShort = type && type.includes('short');
   canvas.width = 300;
-  canvas.height = 450;
+  canvas.height = isShort ? 200 : 450;
   const ctx = canvas.getContext('2d');
 
-  // Background
-  ctx.fillStyle = '#222';
-  ctx.fillRect(0, 0, 300, 450);
+  // Background - different colors for different short types
+  let bgColor = '#222';
+  let accentColor = '#b8960c';
+  let label = '';
+
+  if (type === 'animated-short') {
+    bgColor = '#1a1a3e';
+    accentColor = '#9b59b6';
+    label = 'ANIMATED SHORT';
+  } else if (type === 'documentary-short') {
+    bgColor = '#1a2e1a';
+    accentColor = '#27ae60';
+    label = 'DOC SHORT';
+  } else if (type === 'live-action-short') {
+    bgColor = '#2e1a1a';
+    accentColor = '#e74c3c';
+    label = 'LIVE ACTION SHORT';
+  }
+
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Border
-  ctx.strokeStyle = '#b8960c';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(10, 10, 280, 430);
+  ctx.strokeStyle = accentColor;
+  ctx.lineWidth = isShort ? 3 : 4;
+  ctx.strokeRect(8, 8, canvas.width - 16, canvas.height - 16);
+
+  // Short film label at top
+  if (isShort && label) {
+    ctx.fillStyle = accentColor;
+    ctx.font = 'bold 11px Courier New, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(label, canvas.width / 2, 28);
+
+    // Divider line
+    ctx.strokeStyle = accentColor;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(20, 38);
+    ctx.lineTo(canvas.width - 20, 38);
+    ctx.stroke();
+  }
 
   // Title text
-  ctx.fillStyle = '#b8960c';
-  ctx.font = 'bold 24px Courier New, monospace';
+  ctx.fillStyle = accentColor;
+  ctx.font = isShort ? 'bold 16px Courier New, monospace' : 'bold 24px Courier New, monospace';
   ctx.textAlign = 'center';
 
   // Word wrap the title
   const words = title.split(' ');
   let lines = [];
   let currentLine = '';
+  const maxWidth = canvas.width - 40;
 
   words.forEach(word => {
     const testLine = currentLine ? currentLine + ' ' + word : word;
-    if (ctx.measureText(testLine).width < 260) {
+    if (ctx.measureText(testLine).width < maxWidth) {
       currentLine = testLine;
     } else {
       if (currentLine) lines.push(currentLine);
@@ -72,10 +109,12 @@ function generatePosterDataUrl(title) {
   if (currentLine) lines.push(currentLine);
 
   // Draw centered text
-  const lineHeight = 32;
-  const startY = (450 - lines.length * lineHeight) / 2;
+  const lineHeight = isShort ? 22 : 32;
+  const titleAreaStart = isShort ? 50 : 0;
+  const titleAreaHeight = canvas.height - titleAreaStart;
+  const startY = titleAreaStart + (titleAreaHeight - lines.length * lineHeight) / 2;
   lines.forEach((line, i) => {
-    ctx.fillText(line.toUpperCase(), 150, startY + i * lineHeight);
+    ctx.fillText(line.toUpperCase(), canvas.width / 2, startY + i * lineHeight);
   });
 
   return canvas.toDataURL('image/png');
@@ -83,8 +122,8 @@ function generatePosterDataUrl(title) {
 
 // Get poster URL with fallback
 function getPosterUrl(movie) {
-  // Always use generated poster for reliability
-  return generatePosterDataUrl(movie.title);
+  // Use type-aware poster generation
+  return generatePosterDataUrl(movie.title, movie.type || null);
 }
 
 // Render header navigation
@@ -131,9 +170,15 @@ function createMovieCard(movie, options = {}) {
   const inWatchlist = isInWatchlist(movie.id);
   const watched = isWatched(movie.id);
   const watchedInfo = getWatchedInfo(movie.id);
+  const isShort = movie.type && movie.type.includes('short');
 
   const card = document.createElement('div');
-  card.className = 'movie-card';
+  card.className = 'movie-card' + (isShort ? ' movie-card--short' : '');
+
+  // Add type-specific class for coloring
+  if (movie.type === 'animated-short') card.classList.add('movie-card--animated');
+  if (movie.type === 'documentary-short') card.classList.add('movie-card--documentary');
+  if (movie.type === 'live-action-short') card.classList.add('movie-card--live-action');
 
   const posterUrl = getPosterUrl(movie);
 

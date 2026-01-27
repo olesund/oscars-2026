@@ -288,6 +288,51 @@ a:hover {
   color: var(--green);
 }
 
+/* Short Film Cards - Distinct Visual Treatment */
+.movie-card--short {
+  border-width: 2px;
+}
+
+.movie-card--short .movie-card__poster {
+  aspect-ratio: 3/2;
+}
+
+.movie-card--animated {
+  border-color: #9b59b6;
+}
+
+.movie-card--animated .movie-card__info {
+  background: #f3e5f5;
+}
+
+.movie-card--animated .movie-card__title {
+  color: #7b1fa2;
+}
+
+.movie-card--documentary {
+  border-color: #27ae60;
+}
+
+.movie-card--documentary .movie-card__info {
+  background: #e8f5e9;
+}
+
+.movie-card--documentary .movie-card__title {
+  color: #1b5e20;
+}
+
+.movie-card--live-action {
+  border-color: #e74c3c;
+}
+
+.movie-card--live-action .movie-card__info {
+  background: #ffebee;
+}
+
+.movie-card--live-action .movie-card__title {
+  color: #b71c1c;
+}
+
 /* Category List */
 .category-list {
   display: flex;
