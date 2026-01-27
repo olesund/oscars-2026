@@ -352,8 +352,10 @@ a:hover {
   color: var(--black);
 }
 
+/* Bottom border: show when expanded, when followed by last nominee container, OR when it's the last item */
 .category-item:has(+ .category-nominees--visible),
-.category-item:has(+ .category-nominees:last-child) {
+.category-item:has(+ .category-nominees:last-child),
+.category-item:last-child {
   border-bottom: var(--border);
 }
 
