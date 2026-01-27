@@ -916,6 +916,25 @@ a:hover {
     font-size: 0.6rem;
     padding: 4px;
   }
+
+  /* Results page dropdowns */
+  .winner-select {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  /* Tabs on mobile */
+  .tabs {
+    flex-wrap: wrap;
+  }
+
+  .tab {
+    flex: 1;
+    min-width: 0;
+    padding: var(--spacing-sm);
+    font-size: 0.75rem;
+    text-align: center;
+  }
 }
 
 /* Utilities */
