@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Oscar 2026 Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header" id="header"></header>
+
+  <main class="page">
+    <div class="container" style="max-width: 600px;">
+      <h1 class="text-center mb-xl">Your Profile</h1>
+
+      <!-- Not logged in -->
+      <div id="login-section" class="card">
+        <h2 class="mb-md">Sign In</h2>
+        <p class="text-muted mb-lg">Just pick a username to get started - no password needed! If this is your first time, we'll create a new profile for you.</p>
+
+        <form id="login-form">
+          <div class="form-group">
+            <label class="form-label" for="username">Username</label>
+            <input type="text" id="username" class="form-input" placeholder="Pick a username" required minlength="2" maxlength="20">
+            <p class="text-muted" style="font-size: 0.8rem; margin-top: 0.5rem;">2-20 characters. This is how friends will see you on the leaderboard.</p>
+          </div>
+          <button type="submit" class="btn btn--primary btn--block btn--lg">
+            Continue
+          </button>
+        </form>
+
+        <div id="login-error" class="alert alert--error mt-lg hidden"></div>
+      </div>
+
+      <!-- Logged in -->
+      <div id="profile-section" class="hidden">
+        <div class="card mb-lg">
+          <div class="flex flex-between flex-center mb-lg">
+            <div>
+              <h2 class="mb-sm" id="profile-username"></h2>
+              <p class="text-muted mb-0" id="profile-joined"></p>
+            </div>
+            <div class="user-badge" style="width: 60px; height: 60px; font-size: 1.25rem; display: flex; align-items: center; justify-content: center;" id="profile-avatar"></div>
+          </div>
+
+          <div class="stats-grid mb-0">
+            <div class="stat-card">
+              <div class="stat-card__value" id="profile-watched">0</div>
+              <div class="stat-card__label">Watched</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__value" id="profile-watchlist">0</div>
+              <div class="stat-card__label">Watchlist</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__value" id="profile-rating">-</div>
+              <div class="stat-card__label">Avg Rating</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mb-lg">
+          <h3 class="mb-md">Quick Links</h3>
+          <div class="flex gap-md" style="flex-wrap: wrap;">
+            <a href="my-list.html" class="btn btn--secondary">My List</a>
+            <a href="ballot.html" class="btn btn--primary">My Ballot</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="mb-md">Account</h3>
+          <p class="text-muted mb-lg">Your data is synced to the cloud and available on any device where you sign in with this username.</p>
+
+          <button id="sign-out-btn" class="btn btn--outline btn--block mb-md">
+            Sign Out
+          </button>
+          <button id="clear-data-btn" class="btn btn--danger btn--block">
+            Clear Local Cache
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    onReady(() => {
+      const loginSection = document.getElementById('login-section');
+      const profileSection = document.getElementById('profile-section');
+      const loginForm = document.getElementById('login-form');
+      const loginError = document.getElementById('login-error');
+
+      // Check if already logged in
+      async function showProfile() {
+        const user = getLocalUser();
+        if (!user) return;
+
+        loginSection.classList.add('hidden');
+        profileSection.classList.remove('hidden');
+
+        // Update profile info
+        document.getElementById('profile-username').textContent = user.username;
+        document.getElementById('profile-avatar').textContent = '[' + user.username.charAt(0).toUpperCase() + ']';
+        document.getElementById('profile-joined').textContent = `Joined ${formatDate(user.created_at)}`;
+
+        // Load user data from database if not already loaded
+        if (!isDataLoaded()) {
+          await loadUserData();
+        }
+
+        // Update stats
+        const stats = getStats();
+        document.getElementById('profile-watched').textContent = stats.watchedCount;
+        document.getElementById('profile-watchlist').textContent = stats.watchlistCount;
+        document.getElementById('profile-rating').textContent = stats.averageRating || '-';
+
+        // Re-render header
+        renderHeader();
+      }
+
+      if (isLoggedIn()) {
+        showProfile();
+      }
+
+      // Login form
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+
+        if (!username) return;
+
+        loginError.classList.add('hidden');
+
+        try {
+          // Create or get user from Supabase (or mock)
+          const result = await api_createUser(username);
+
+          if (result.error) {
+            loginError.textContent = result.error;
+            loginError.classList.remove('hidden');
+            return;
+          }
+
+          // Save user locally
+          setLocalUser({
+            id: result.data.id,
+            username: result.data.username,
+            created_at: result.data.created_at
+          });
+
+          // Load user data from database
+          await loadUserData();
+
+          showToast(`Welcome, ${result.data.username}!`, 'success');
+          showProfile();
+        } catch (err) {
+          loginError.textContent = 'An error occurred. Please try again.';
+          loginError.classList.remove('hidden');
+        }
+      });
+
+      // Sign out
+      document.getElementById('sign-out-btn').addEventListener('click', () => {
+        clearLocalUser();
+        showToast('Signed out successfully');
+        window.location.reload();
+      });
+
+      // Clear local cache
+      document.getElementById('clear-data-btn').addEventListener('click', () => {
+        if (confirm('Clear local cache? This will reload your data from the server. Your data will NOT be deleted.')) {
+          clearLocalCache();
+          showToast('Cache cleared. Reloading...');
+          setTimeout(() => window.location.reload(), 500);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

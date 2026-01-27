@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My List - Oscar 2026 Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header" id="header"></header>
+
+  <main class="page">
+    <div class="container">
+      <h1 class="mb-lg">My List</h1>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab tab--active" data-tab="watchlist">
+          Want to See (<span id="watchlist-count">0</span>)
+        </button>
+        <button class="tab" data-tab="watched">
+          Watched (<span id="watched-count">0</span>)
+        </button>
+      </div>
+
+      <!-- Watchlist Tab -->
+      <div class="tab-content tab-content--active" id="tab-watchlist">
+        <div id="watchlist-content"></div>
+      </div>
+
+      <!-- Watched Tab -->
+      <div class="tab-content" id="tab-watched">
+        <div class="flex flex-between flex-center mb-lg" style="flex-wrap: wrap; gap: 1rem;">
+          <p class="text-muted mb-0" id="watched-stats"></p>
+          <select id="sort-select" class="form-select" style="width: auto;">
+            <option value="date">Recently Watched</option>
+            <option value="rating">Highest Rated</option>
+            <option value="title">Title A-Z</option>
+          </select>
+        </div>
+        <div id="watched-content"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    onReady(async () => {
+      // Check if logged in
+      if (!isLoggedIn()) {
+        document.querySelector('.container').innerHTML = `
+          <h1 class="mb-lg">My List</h1>
+          <div class="card" style="text-align: center; padding: 2rem;">
+            <div class="empty-state__icon mb-md">[!]</div>
+            <h2 class="mb-md">Sign In Required</h2>
+            <p class="text-muted mb-lg">Pick a username to track movies you want to see and rate the ones you've watched.<br>No password needed - just a username.</p>
+            <a href="profile.html" class="btn btn--primary btn--lg">Sign In</a>
+          </div>
+        `;
+        return;
+      }
+
+      // Load user data if not already loaded
+      if (!isDataLoaded()) {
+        await loadUserData();
+      }
+
+      const tabs = document.querySelectorAll('.tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      const watchlistCountEl = document.getElementById('watchlist-count');
+      const watchedCountEl = document.getElementById('watched-count');
+      const watchedStatsEl = document.getElementById('watched-stats');
+      const sortSelect = document.getElementById('sort-select');
+
+      // Tab switching
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const targetTab = tab.dataset.tab;
+
+          tabs.forEach(t => t.classList.remove('tab--active'));
+          tab.classList.add('tab--active');
+
+          tabContents.forEach(tc => {
+            tc.classList.remove('tab-content--active');
+            if (tc.id === `tab-${targetTab}`) {
+              tc.classList.add('tab-content--active');
+            }
+          });
+        });
+      });
+
+      function updateCounts() {
+        const watchlist = getWatchlist();
+        const watched = getWatched();
+        watchlistCountEl.textContent = watchlist.length;
+        watchedCountEl.textContent = Object.keys(watched).length;
+      }
+
+      function renderWatchlist() {
+        const content = document.getElementById('watchlist-content');
+        const watchlist = getWatchlist();
+
+        if (watchlist.length === 0) {
+          content.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state__icon">[  ]</div>
+              <h2 class="empty-state__title">No movies in list</h2>
+              <p class="empty-state__text">Browse movies and click "+ List" to add them here.</p>
+              <a href="movies.html" class="btn btn--primary">Browse Movies</a>
+            </div>
+          `;
+          return;
+        }
+
+        content.innerHTML = '<div class="movie-grid" id="watchlist-grid"></div>';
+        const grid = document.getElementById('watchlist-grid');
+
+        watchlist.forEach(movieId => {
+          const movie = getMovie(movieId);
+          if (movie) {
+            grid.appendChild(createMovieCard(movie));
+          }
+        });
+      }
+
+      function renderWatched(sortBy = 'date') {
+        const content = document.getElementById('watched-content');
+        const watched = getWatched();
+        const movieIds = Object.keys(watched);
+
+        // Stats
+        const stats = getStats();
+        watchedStatsEl.textContent = stats.averageRating
+          ? `Avg rating: ${stats.averageRating}`
+          : '';
+
+        if (movieIds.length === 0) {
+          content.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-state__icon">[OK]</div>
+              <h2 class="empty-state__title">No movies watched</h2>
+              <p class="empty-state__text">Click "Watched?" on any movie to track it here.</p>
+              <a href="movies.html" class="btn btn--primary">Browse Movies</a>
+            </div>
+          `;
+          return;
+        }
+
+        // Build list with movie data
+        let movieList = movieIds.map(id => ({
+          movie: getMovie(id),
+          info: watched[id],
+          id: id
+        })).filter(m => m.movie);
+
+        // Sort
+        switch (sortBy) {
+          case 'rating':
+            movieList.sort((a, b) => (b.info.rating || 0) - (a.info.rating || 0));
+            break;
+          case 'title':
+            movieList.sort((a, b) => a.movie.title.localeCompare(b.movie.title));
+            break;
+          default: // date
+            movieList.sort((a, b) => new Date(b.info.watchedAt) - new Date(a.info.watchedAt));
+        }
+
+        content.innerHTML = '';
+
+        movieList.forEach(({ movie, info }) => {
+          const item = document.createElement('div');
+          item.className = 'card';
+          item.style.cursor = 'pointer';
+
+          const ratingDisplay = info.rating
+            ? '[' + '*'.repeat(info.rating) + '-'.repeat(5 - info.rating) + ']'
+            : '[-----]';
+
+          item.innerHTML = `
+            <div class="flex gap-md" style="align-items: flex-start;">
+              <div style="flex: 1; min-width: 0;">
+                <div class="flex flex-between" style="align-items: flex-start; gap: 1rem;">
+                  <div style="min-width: 0;">
+                    <h4 class="mb-sm">${movie.title}</h4>
+                    <div class="mb-sm" style="font-size: 1.1rem; color: var(--gold);">${ratingDisplay}</div>
+                    ${info.note ? `<p class="text-muted mb-sm">"${info.note}"</p>` : ''}
+                    <p class="text-muted mb-0" style="font-size: 0.85rem;">
+                      Watched: ${formatDate(info.watchedAt)}
+                    </p>
+                  </div>
+                  <button class="btn btn--danger btn--sm remove-btn" data-id="${movie.id}">Remove</button>
+                </div>
+              </div>
+            </div>
+          `;
+
+          item.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('remove-btn')) {
+              navigateTo('movie.html', { id: movie.id });
+            }
+          });
+
+          item.querySelector('.remove-btn').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (confirm('Remove from watched?')) {
+              await removeFromWatched(movie.id);
+              showToast('Removed');
+              renderWatched(sortSelect.value);
+              updateCounts();
+            }
+          });
+
+          content.appendChild(item);
+        });
+      }
+
+      sortSelect.addEventListener('change', (e) => {
+        renderWatched(e.target.value);
+      });
+
+      // Initial render
+      updateCounts();
+      renderWatchlist();
+      renderWatched();
+
+      // Re-render when storage changes (from movie cards)
+      window.addEventListener('storage', () => {
+        updateCounts();
+        renderWatchlist();
+        renderWatched(sortSelect.value);
+      });
+    });
+  </script>
+</body>
+</html>

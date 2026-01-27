@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Oscar 2026 Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header" id="header"></header>
+
+  <main class="page">
+    <div class="container">
+      <!-- Welcome Section -->
+      <section class="mb-xl">
+        <h1>Oscar 2026 Tracker</h1>
+        <p class="text-muted">Track nominations, manage your list, and compete with friends.</p>
+      </section>
+
+      <!-- Stats Section -->
+      <section class="stats-grid mb-xl">
+        <div class="stat-card">
+          <div class="stat-card__value" id="stat-movies">0</div>
+          <div class="stat-card__label">Movies</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__value" id="stat-categories">24</div>
+          <div class="stat-card__label">Categories</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__value" id="stat-watched">0</div>
+          <div class="stat-card__label">Watched</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__value" id="stat-watchlist">0</div>
+          <div class="stat-card__label">To Watch</div>
+        </div>
+      </section>
+
+      <!-- User Progress -->
+      <section class="card mb-xl" id="user-section">
+        <h3 class="mb-md">Your Progress</h3>
+        <div id="user-progress"></div>
+      </section>
+
+      <!-- Featured: Most Nominated -->
+      <section class="mb-xl">
+        <div class="flex flex-between flex-center mb-lg">
+          <h2 class="mb-0">Most Nominated</h2>
+          <a href="movies.html" class="btn btn--sm">All Movies ></a>
+        </div>
+        <div class="movie-grid" id="featured-movies"></div>
+      </section>
+
+      <!-- Categories Preview -->
+      <section class="mb-xl">
+        <div class="flex flex-between flex-center mb-lg">
+          <h2 class="mb-0">Categories</h2>
+          <a href="categories.html" class="btn btn--sm">All Categories ></a>
+        </div>
+        <div class="category-list" id="featured-categories"></div>
+      </section>
+
+      <!-- Ceremony Info -->
+      <section class="card card--gold text-center">
+        <h3>98th Academy Awards</h3>
+        <p class="mb-sm">Host: Conan O'Brien</p>
+        <p class="mb-sm">March 15, 2026 | 7:00 PM ET</p>
+        <p class="text-muted mb-lg">ABC / Hulu</p>
+        <a href="ballot.html" class="btn btn--primary">Submit Predictions</a>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    onReady(() => {
+      const movies = getAllMovies();
+      const categories = getAllCategories();
+      const stats = getStats();
+
+      document.getElementById('stat-movies').textContent = movies.length;
+      document.getElementById('stat-categories').textContent = categories.length;
+      document.getElementById('stat-watched').textContent = stats.watchedCount;
+      document.getElementById('stat-watchlist').textContent = stats.watchlistCount;
+
+      // User progress
+      const user = getLocalUser();
+      const userProgress = document.getElementById('user-progress');
+
+      if (user) {
+        const watchedPercent = Math.round((stats.watchedCount / movies.length) * 100);
+        userProgress.innerHTML = `
+          <p class="mb-md">Welcome, ${user.username}</p>
+          <div class="mb-sm">Watched: ${stats.watchedCount} / ${movies.length}</div>
+          <div class="progress mb-lg">
+            <div class="progress__bar" style="width: ${watchedPercent}%"></div>
+          </div>
+          <div class="flex gap-sm" style="flex-wrap: wrap;">
+            <a href="my-list.html" class="btn btn--secondary">My List (${stats.watchlistCount + stats.watchedCount})</a>
+            <a href="ballot.html" class="btn btn--primary">My Ballot</a>
+          </div>
+        `;
+      } else {
+        userProgress.innerHTML = `
+          <p class="mb-md">Sign in to track progress and submit predictions.</p>
+          <a href="profile.html" class="btn btn--primary">Get Started</a>
+        `;
+      }
+
+      // Featured movies (top 6)
+      const featuredMovies = document.getElementById('featured-movies');
+      movies.slice(0, 6).forEach(movie => {
+        featuredMovies.appendChild(createMovieCard(movie));
+      });
+
+      // Featured categories
+      const featuredCategories = document.getElementById('featured-categories');
+      const mainCategories = ['best-picture', 'best-director', 'best-actor', 'best-actress', 'best-original-screenplay'];
+      mainCategories.forEach(catId => {
+        const category = getCategory(catId);
+        if (category) {
+          const item = document.createElement('a');
+          item.href = 'categories.html';
+          item.className = 'category-item';
+          item.innerHTML = `
+            <span class="category-item__name">${category.name}</span>
+            <span class="category-item__count">${category.nominees.length}</span>
+          `;
+          featuredCategories.appendChild(item);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

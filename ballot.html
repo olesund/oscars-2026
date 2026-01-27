@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Ballot - Oscar 2026 Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header" id="header"></header>
+
+  <main class="page">
+    <div class="container" style="max-width: 800px;">
+      <div class="flex flex-between flex-center mb-lg" style="flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 class="mb-sm">My Ballot</h1>
+          <p class="text-muted mb-0">Pick who you think will win in each category</p>
+        </div>
+        <div id="progress-badge" class="stat-card" style="padding: 1rem;">
+          <div class="stat-card__value" id="progress-count">0/24</div>
+          <div class="stat-card__label">Categories</div>
+        </div>
+      </div>
+
+      <div class="alert alert--info mb-lg" id="auto-save-notice">
+        Your picks are saved automatically as you select them.
+      </div>
+
+      <div id="ballot-content">
+        <div class="loading">
+          <div class="loading__spinner"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    onReady(async () => {
+      const content = document.getElementById('ballot-content');
+      const progressCount = document.getElementById('progress-count');
+      const autoSaveNotice = document.getElementById('auto-save-notice');
+
+      // Check if logged in
+      const user = getLocalUser();
+      if (!user) {
+        autoSaveNotice.style.display = 'none';
+        content.innerHTML = `
+          <div class="card" style="text-align: center; padding: 2rem;">
+            <div class="empty-state__icon mb-md">[!]</div>
+            <h2 class="mb-md">Sign In Required</h2>
+            <p class="text-muted mb-lg">Pick a username to submit your ballot predictions.<br>No password needed - just a username.</p>
+            <a href="profile.html" class="btn btn--primary btn--lg">Sign In</a>
+          </div>
+        `;
+        return;
+      }
+
+      const categories = getAllCategories();
+      let picks = {};
+      let isSaving = false;
+
+      // Load existing ballot
+      const ballotResult = await api_getAllBallots();
+      if (ballotResult.data) {
+        const userBallot = ballotResult.data.find(b => b.user_id === user.id);
+        if (userBallot && userBallot.picks) {
+          picks = { ...userBallot.picks };
+        }
+      }
+
+      function updateProgress() {
+        const count = Object.keys(picks).length;
+        progressCount.textContent = `${count}/${categories.length}`;
+      }
+
+      // Auto-save function with debounce
+      let saveTimeout = null;
+      async function autoSave() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+
+        saveTimeout = setTimeout(async () => {
+          if (isSaving) return;
+          isSaving = true;
+
+          autoSaveNotice.textContent = 'Saving...';
+          autoSaveNotice.style.color = 'var(--gold)';
+
+          const result = await api_saveBallot(user.id, picks);
+
+          if (result.error) {
+            autoSaveNotice.textContent = 'Failed to save. Try again.';
+            autoSaveNotice.style.color = 'var(--red)';
+          } else {
+            autoSaveNotice.textContent = 'Saved!';
+            autoSaveNotice.style.color = 'var(--green)';
+
+            // Reset message after a moment
+            setTimeout(() => {
+              autoSaveNotice.textContent = 'Your picks are saved automatically as you select them.';
+              autoSaveNotice.style.color = '';
+            }, 1500);
+          }
+
+          isSaving = false;
+        }, 500); // 500ms debounce
+      }
+
+      function renderBallot() {
+        content.innerHTML = '';
+
+        // Group categories
+        const groups = {
+          'Major Awards': ['best-picture', 'best-director', 'best-actor', 'best-actress', 'best-supporting-actor', 'best-supporting-actress'],
+          'Writing': ['best-adapted-screenplay', 'best-original-screenplay'],
+          'Animated & International': ['best-animated-feature', 'best-international-feature'],
+          'Documentary': ['best-documentary-feature', 'best-documentary-short'],
+          'Short Films': ['best-animated-short', 'best-live-action-short'],
+          'Music': ['best-original-score', 'best-original-song'],
+          'Technical': ['best-cinematography', 'best-film-editing', 'best-production-design', 'best-costume-design', 'best-makeup-hairstyling', 'best-sound', 'best-visual-effects', 'best-casting']
+        };
+
+        for (const [groupName, categoryIds] of Object.entries(groups)) {
+          const groupHeader = document.createElement('h2');
+          groupHeader.className = 'mb-md mt-xl';
+          groupHeader.textContent = groupName;
+          content.appendChild(groupHeader);
+
+          categoryIds.forEach(catId => {
+            const category = getCategory(catId);
+            if (!category) return;
+
+            const currentPick = picks[catId];
+
+            const section = document.createElement('div');
+            section.className = 'ballot-category';
+            section.innerHTML = `
+              <div class="ballot-category__header">
+                <h3 class="ballot-category__name">${category.name}</h3>
+                ${currentPick ? `<span class="ballot-category__pick">[OK]</span>` : ''}
+              </div>
+              <div class="ballot-nominees" data-category="${catId}"></div>
+            `;
+
+            const nomineesContainer = section.querySelector('.ballot-nominees');
+
+            category.nominees.forEach(nominee => {
+              const nomineeId = getNomineeId(nominee);
+              const movie = nominee.movieId ? getMovie(nominee.movieId) : null;
+              const isSelected = currentPick === nomineeId;
+
+              const nomineeEl = document.createElement('div');
+              nomineeEl.className = `ballot-nominee ${isSelected ? 'ballot-nominee--selected' : ''}`;
+              nomineeEl.dataset.nomineeId = nomineeId;
+
+              nomineeEl.innerHTML = `
+                <div class="ballot-nominee__radio"></div>
+                <div style="flex: 1;">
+                  <div class="ballot-nominee__name">${getNomineeName(nominee, category)}</div>
+                  ${movie ? `<div class="ballot-nominee__movie">${movie.title}</div>` : ''}
+                  ${nominee.country ? `<div class="ballot-nominee__movie">${nominee.country}</div>` : ''}
+                </div>
+              `;
+
+              nomineeEl.addEventListener('click', () => {
+                // Deselect others in this category
+                nomineesContainer.querySelectorAll('.ballot-nominee').forEach(el => {
+                  el.classList.remove('ballot-nominee--selected');
+                });
+
+                // Select this one
+                nomineeEl.classList.add('ballot-nominee--selected');
+                picks[catId] = nomineeId;
+
+                // Update header
+                section.querySelector('.ballot-category__header').innerHTML = `
+                  <h3 class="ballot-category__name">${category.name}</h3>
+                  <span class="ballot-category__pick">[OK]</span>
+                `;
+
+                updateProgress();
+
+                // Auto-save
+                autoSave();
+              });
+
+              nomineesContainer.appendChild(nomineeEl);
+            });
+
+            content.appendChild(section);
+          });
+        }
+
+        updateProgress();
+      }
+
+      renderBallot();
+    });
+  </script>
+</body>
+</html>

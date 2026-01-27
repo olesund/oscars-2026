@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movie - Oscar 2026 Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header" id="header"></header>
+
+  <main class="page">
+    <div class="container" style="max-width: 900px;">
+      <div id="movie-content">
+        <div class="loading">
+          <div class="loading__spinner"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    onReady(() => {
+      const content = document.getElementById('movie-content');
+      const movieId = getUrlParam('id');
+
+      if (!movieId) {
+        content.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state__icon">[??]</div>
+            <h2 class="empty-state__title">Movie not found</h2>
+            <p class="empty-state__text">No movie ID was provided.</p>
+            <a href="movies.html" class="btn btn--primary">Browse Movies</a>
+          </div>
+        `;
+        return;
+      }
+
+      const movie = getMovie(movieId);
+
+      if (!movie) {
+        content.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state__icon">[??]</div>
+            <h2 class="empty-state__title">Movie not found</h2>
+            <p class="empty-state__text">We couldn't find a movie with that ID.</p>
+            <a href="movies.html" class="btn btn--primary">Browse Movies</a>
+          </div>
+        `;
+        return;
+      }
+
+      // Update page title
+      document.title = `${movie.title} - Oscar 2026 Tracker`;
+
+      // Get nominations for this movie
+      const nominations = getMovieNominations(movie.id);
+      const watched = isWatched(movie.id);
+      const watchedInfo = getWatchedInfo(movie.id);
+      const inWatchlist = isInWatchlist(movie.id);
+
+      function render() {
+        const currentWatched = isWatched(movie.id);
+        const currentWatchedInfo = getWatchedInfo(movie.id);
+        const currentInWatchlist = isInWatchlist(movie.id);
+        const posterUrl = getPosterUrl(movie);
+
+        const ratingDisplay = currentWatchedInfo?.rating
+          ? '[' + '*'.repeat(currentWatchedInfo.rating) + '-'.repeat(5 - currentWatchedInfo.rating) + ']'
+          : '[-----]';
+
+        content.innerHTML = `
+          <a href="movies.html" class="btn btn--secondary btn--sm mb-lg">&lt;- Back to Movies</a>
+
+          <div class="card" style="display: grid; grid-template-columns: 200px 1fr; gap: 2rem;">
+            <div>
+              <img src="${posterUrl}" alt="${movie.title}" style="width: 100%;">
+            </div>
+            <div>
+              <h1 class="mb-sm">${movie.title}</h1>
+              <p class="text-muted mb-lg">${movie.year} | Directed by ${movie.director}</p>
+
+              <div class="mb-lg">
+                <span class="stat-card__value text-gold">${movie.nominations}</span>
+                <span class="text-muted"> nomination${movie.nominations > 1 ? 's' : ''}</span>
+              </div>
+
+              <div class="flex gap-md mb-xl" style="flex-wrap: wrap;">
+                ${currentWatched ? `
+                  <button class="btn btn--secondary" id="edit-watched-btn">Edit Rating</button>
+                  <button class="btn btn--outline" id="remove-watched-btn">Remove from Watched</button>
+                ` : `
+                  <button class="btn btn--primary" id="mark-watched-btn">Mark as Watched</button>
+                  <button class="btn ${currentInWatchlist ? 'btn--danger' : 'btn--outline'}" id="watchlist-btn">
+                    ${currentInWatchlist ? '- Remove from List' : '+ Add to List'}
+                  </button>
+                `}
+              </div>
+
+              ${currentWatched && currentWatchedInfo ? `
+                <div class="card card--gold mb-lg">
+                  <h4 class="mb-sm">Your Rating</h4>
+                  <div class="mb-sm" style="font-size: 1.25rem; color: var(--gold);">${ratingDisplay}</div>
+                  ${currentWatchedInfo.note ? `<p class="text-muted mb-0">"${currentWatchedInfo.note}"</p>` : ''}
+                  <p class="text-muted mb-0" style="font-size: 0.85rem; margin-top: 0.5rem;">
+                    Watched ${formatDate(currentWatchedInfo.watchedAt)}
+                  </p>
+                </div>
+              ` : ''}
+
+              <h3 class="mb-md">Nominations</h3>
+              <div class="category-list">
+                ${nominations.map(nom => `
+                  <div class="category-item" style="cursor: default;">
+                    <span class="category-item__name">${nom.category.name}</span>
+                    ${nom.nominee.name ? `<span class="text-muted">${nom.nominee.name}</span>` : ''}
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+
+          <!-- Rating Modal -->
+          <div id="rating-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+            <div class="card" style="max-width: 400px; width: 90%;">
+              <h3 class="mb-lg">Rate "${movie.title}"</h3>
+              <div class="form-group">
+                <label class="form-label">Your Rating</label>
+                <div id="rating-stars" class="star-rating mb-md"></div>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="rating-note">Note (optional)</label>
+                <textarea id="rating-note" class="form-textarea" placeholder="What did you think?"></textarea>
+              </div>
+              <div class="flex gap-md">
+                <button class="btn btn--secondary" id="cancel-rating">Cancel</button>
+                <button class="btn btn--primary" id="save-rating">Save</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        // Setup event listeners
+        setupEventListeners();
+      }
+
+      function setupEventListeners() {
+        let selectedRating = watchedInfo?.rating || 0;
+
+        // Watchlist button
+        const watchlistBtn = document.getElementById('watchlist-btn');
+        if (watchlistBtn) {
+          watchlistBtn.addEventListener('click', async () => {
+            if (!isLoggedIn()) {
+              showLoginPrompt();
+              return;
+            }
+            const added = await toggleWatchlist(movie.id);
+            showToast(added ? 'Added to list' : 'Removed from list', 'success');
+            render();
+            renderHeader();
+          });
+        }
+
+        // Mark as watched button
+        const markWatchedBtn = document.getElementById('mark-watched-btn');
+        if (markWatchedBtn) {
+          markWatchedBtn.addEventListener('click', () => {
+            if (!isLoggedIn()) {
+              showLoginPrompt();
+              return;
+            }
+            document.getElementById('rating-modal').classList.remove('hidden');
+            document.getElementById('rating-modal').style.display = 'flex';
+            setupRatingStars();
+          });
+        }
+
+        // Edit watched button
+        const editWatchedBtn = document.getElementById('edit-watched-btn');
+        if (editWatchedBtn) {
+          editWatchedBtn.addEventListener('click', () => {
+            const info = getWatchedInfo(movie.id);
+            selectedRating = info?.rating || 0;
+            document.getElementById('rating-note').value = info?.note || '';
+            document.getElementById('rating-modal').classList.remove('hidden');
+            document.getElementById('rating-modal').style.display = 'flex';
+            setupRatingStars();
+          });
+        }
+
+        // Remove from watched
+        const removeWatchedBtn = document.getElementById('remove-watched-btn');
+        if (removeWatchedBtn) {
+          removeWatchedBtn.addEventListener('click', async () => {
+            if (confirm('Remove this movie from your watched list?')) {
+              await removeFromWatched(movie.id);
+              showToast('Removed from watched', 'success');
+              render();
+              renderHeader();
+            }
+          });
+        }
+
+        // Rating modal
+        function setupRatingStars() {
+          const starsContainer = document.getElementById('rating-stars');
+          starsContainer.innerHTML = '';
+
+          for (let i = 1; i <= 5; i++) {
+            const star = document.createElement('span');
+            star.className = `star-rating__star ${i <= selectedRating ? 'star-rating__star--active' : ''}`;
+            star.textContent = i <= selectedRating ? '*' : '-';
+            star.addEventListener('click', () => {
+              selectedRating = i;
+              setupRatingStars();
+            });
+            starsContainer.appendChild(star);
+          }
+        }
+
+        document.getElementById('cancel-rating')?.addEventListener('click', () => {
+          document.getElementById('rating-modal').classList.add('hidden');
+          document.getElementById('rating-modal').style.display = 'none';
+        });
+
+        document.getElementById('save-rating')?.addEventListener('click', async () => {
+          const note = document.getElementById('rating-note').value.trim();
+
+          if (isWatched(movie.id)) {
+            await updateWatched(movie.id, selectedRating, note);
+          } else {
+            await markAsWatched(movie.id, selectedRating, note);
+          }
+
+          document.getElementById('rating-modal').classList.add('hidden');
+          document.getElementById('rating-modal').style.display = 'none';
+          showToast('Rating saved!', 'success');
+          render();
+          renderHeader();
+        });
+      }
+
+      render();
+    });
+  </script>
+
+  <style>
+    @media (max-width: 768px) {
+      .card[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  </style>
+</body>
+</html>

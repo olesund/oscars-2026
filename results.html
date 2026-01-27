@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Results - Oscar 2026 Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header" id="header"></header>
+
+  <main class="page">
+    <div class="container" style="max-width: 800px;">
+      <div class="flex flex-between flex-center mb-lg" style="flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1 class="mb-sm">Enter Results</h1>
+          <p class="text-muted mb-0">Record the winners as they're announced</p>
+        </div>
+        <div class="stat-card" style="padding: 1rem;">
+          <div class="stat-card__value" id="progress-count">0/24</div>
+          <div class="stat-card__label">Announced</div>
+        </div>
+      </div>
+
+      <div class="alert alert--info mb-xl">
+        <strong>Live during the ceremony:</strong> Select winners as they're announced. Scores will update automatically for everyone viewing the ballots page.
+      </div>
+
+      <div id="results-content">
+        <div class="loading">
+          <div class="loading__spinner"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    onReady(async () => {
+      const content = document.getElementById('results-content');
+      const progressCount = document.getElementById('progress-count');
+
+      const categories = getAllCategories();
+
+      // Load current results
+      const resultsData = await api_getResults();
+      let results = resultsData.data || {};
+
+      function updateProgress() {
+        const count = Object.keys(results).length;
+        progressCount.textContent = `${count}/${categories.length}`;
+      }
+
+      function renderResults() {
+        content.innerHTML = '';
+
+        // Group categories (same as ballot)
+        const groups = {
+          'Major Awards': ['best-picture', 'best-director', 'best-actor', 'best-actress', 'best-supporting-actor', 'best-supporting-actress'],
+          'Writing': ['best-adapted-screenplay', 'best-original-screenplay'],
+          'Animated & International': ['best-animated-feature', 'best-international-feature'],
+          'Documentary': ['best-documentary-feature', 'best-documentary-short'],
+          'Short Films': ['best-animated-short', 'best-live-action-short'],
+          'Music': ['best-original-score', 'best-original-song'],
+          'Technical': ['best-cinematography', 'best-film-editing', 'best-production-design', 'best-costume-design', 'best-makeup-hairstyling', 'best-sound', 'best-visual-effects', 'best-casting']
+        };
+
+        for (const [groupName, categoryIds] of Object.entries(groups)) {
+          const groupHeader = document.createElement('h2');
+          groupHeader.className = 'mb-md mt-xl';
+          groupHeader.textContent = groupName;
+          content.appendChild(groupHeader);
+
+          categoryIds.forEach(catId => {
+            const category = getCategory(catId);
+            if (!category) return;
+
+            const currentWinner = results[catId];
+
+            const section = document.createElement('div');
+            section.className = `card mb-md ${currentWinner ? 'card--gold' : ''}`;
+
+            // Build options
+            const options = category.nominees.map(nominee => {
+              const nomineeId = getNomineeId(nominee);
+              const name = getNomineeName(nominee, category);
+              const movie = nominee.movieId ? getMovie(nominee.movieId) : null;
+              const label = movie && name !== movie.title ? `${name} - ${movie.title}` : name;
+
+              return `<option value="${nomineeId}" ${currentWinner === nomineeId ? 'selected' : ''}>${label}</option>`;
+            }).join('');
+
+            section.innerHTML = `
+              <div class="flex flex-between flex-center gap-md" style="flex-wrap: wrap;">
+                <div>
+                  <h4 class="mb-sm">${category.name}</h4>
+                  ${currentWinner ? `
+                    <p class="text-gold mb-0">
+                      <strong>Winner:</strong> ${getNomineeName(category.nominees.find(n => getNomineeId(n) === currentWinner), category)}
+                    </p>
+                  ` : ''}
+                </div>
+                <div class="flex gap-sm" style="flex-wrap: wrap;">
+                  <select class="form-select winner-select" data-category="${catId}" style="width: auto; min-width: 200px;">
+                    <option value="">Select winner...</option>
+                    ${options}
+                  </select>
+                  ${currentWinner ? `<button class="btn btn--secondary btn--sm clear-btn" data-category="${catId}">Clear</button>` : ''}
+                </div>
+              </div>
+            `;
+
+            content.appendChild(section);
+          });
+        }
+
+        // Add event listeners
+        document.querySelectorAll('.winner-select').forEach(select => {
+          select.addEventListener('change', async (e) => {
+            const categoryId = e.target.dataset.category;
+            const winnerId = e.target.value;
+
+            if (winnerId) {
+              e.target.disabled = true;
+
+              const result = await api_setResult(categoryId, winnerId);
+
+              if (result.error) {
+                showToast('Failed to save: ' + result.error, 'error');
+              } else {
+                results[categoryId] = winnerId;
+                showToast('Winner saved!', 'success');
+              }
+
+              e.target.disabled = false;
+              updateProgress();
+              renderResults();
+            }
+          });
+        });
+
+        document.querySelectorAll('.clear-btn').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            const categoryId = e.target.dataset.category;
+
+            if (confirm('Clear this result?')) {
+              e.target.disabled = true;
+
+              // For mock data, just remove locally
+              if (useMockData()) {
+                delete MOCK_DATA.results[categoryId];
+                delete results[categoryId];
+                showToast('Result cleared');
+                updateProgress();
+                renderResults();
+              } else {
+                const result = await clearResult(categoryId);
+                if (result.error) {
+                  showToast('Failed to clear: ' + result.error, 'error');
+                } else {
+                  delete results[categoryId];
+                  showToast('Result cleared');
+                  updateProgress();
+                  renderResults();
+                }
+              }
+            }
+          });
+        });
+
+        updateProgress();
+      }
+
+      renderResults();
+    });
+  </script>
+</body>
+</html>

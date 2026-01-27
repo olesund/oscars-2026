@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Ballots - Oscar 2026 Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header" id="header"></header>
+
+  <main class="page">
+    <div class="container">
+      <h1 class="mb-md">All Ballots</h1>
+      <p class="text-muted mb-xl">See everyone's predictions and track the leaderboard</p>
+
+      <!-- Leaderboard -->
+      <div id="leaderboard-section" class="mb-xl">
+        <div class="leaderboard">
+          <div class="leaderboard__header">
+            <h2 class="leaderboard__title">Leaderboard</h2>
+            <p class="leaderboard__subtitle" id="results-progress">Results: 0/24 categories announced</p>
+          </div>
+          <ul class="leaderboard__list" id="leaderboard-list">
+            <li class="leaderboard__item">
+              <span class="text-muted">No ballots submitted yet</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Ballot Comparison -->
+      <div id="comparison-section">
+        <h2 class="mb-lg">Ballot Comparison</h2>
+        <div style="overflow-x: auto;">
+          <table class="ballot-table" id="ballot-table">
+            <thead>
+              <tr id="table-header">
+                <th>Category</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-state__icon">[  ]</div>
+        <h2 class="empty-state__title">No ballots yet</h2>
+        <p class="empty-state__text">Be the first to submit your predictions!</p>
+        <a href="ballot.html" class="btn btn--primary">Submit Your Ballot</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Winner Celebration (hidden by default) -->
+  <div id="celebration" class="celebration hidden" style="display: none;"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    onReady(async () => {
+      const leaderboardList = document.getElementById('leaderboard-list');
+      const tableHeader = document.getElementById('table-header');
+      const tableBody = document.getElementById('table-body');
+      const resultsProgress = document.getElementById('results-progress');
+      const emptyState = document.getElementById('empty-state');
+      const leaderboardSection = document.getElementById('leaderboard-section');
+      const comparisonSection = document.getElementById('comparison-section');
+      const celebrationEl = document.getElementById('celebration');
+
+      const categories = getAllCategories();
+      let hasShownCelebration = false;
+
+      async function loadData() {
+        // Get all ballots and results
+        const [ballotsResult, resultsResult] = await Promise.all([
+          api_getAllBallots(),
+          api_getResults()
+        ]);
+
+        const ballots = ballotsResult.data || [];
+        const results = resultsResult.data || {};
+
+        // Count results
+        const resultsCount = Object.keys(results).length;
+        resultsProgress.textContent = `Results: ${resultsCount}/${categories.length} categories announced`;
+
+        if (ballots.length === 0) {
+          emptyState.classList.remove('hidden');
+          leaderboardSection.classList.add('hidden');
+          comparisonSection.classList.add('hidden');
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        leaderboardSection.classList.remove('hidden');
+        comparisonSection.classList.remove('hidden');
+
+        // Calculate scores
+        const scoredBallots = ballots.map(ballot => ({
+          ...ballot,
+          username: ballot.users?.username || 'Unknown',
+          score: calculateScore(ballot, results)
+        })).sort((a, b) => b.score - a.score);
+
+        // Render leaderboard
+        leaderboardList.innerHTML = '';
+        scoredBallots.forEach((ballot, index) => {
+          const isWinner = index === 0 && resultsCount === categories.length;
+          const li = document.createElement('li');
+          li.className = `leaderboard__item ${isWinner ? 'leaderboard__item--winner' : ''}`;
+          li.innerHTML = `
+            <span class="leaderboard__rank">${isWinner ? '***' : index + 1}</span>
+            <span class="leaderboard__name">${ballot.username}</span>
+            <span class="leaderboard__score">${ballot.score}/${resultsCount}</span>
+          `;
+          leaderboardList.appendChild(li);
+        });
+
+        // Render comparison table
+        // Header with usernames
+        tableHeader.innerHTML = '<th>Category</th>';
+        scoredBallots.forEach(ballot => {
+          const th = document.createElement('th');
+          th.textContent = ballot.username;
+          tableHeader.appendChild(th);
+        });
+
+        // Add winner column if results exist
+        if (resultsCount > 0) {
+          const winnerTh = document.createElement('th');
+          winnerTh.textContent = 'Winner';
+          winnerTh.style.background = 'var(--gold)';
+          winnerTh.style.color = 'var(--bg)';
+          tableHeader.appendChild(winnerTh);
+        }
+
+        // Rows for each category
+        tableBody.innerHTML = '';
+        categories.forEach(category => {
+          const tr = document.createElement('tr');
+          const winner = results[category.id];
+
+          // Category name
+          const categoryTd = document.createElement('td');
+          categoryTd.className = 'ballot-table__category';
+          categoryTd.textContent = category.name;
+          tr.appendChild(categoryTd);
+
+          // Each user's pick
+          scoredBallots.forEach(ballot => {
+            const td = document.createElement('td');
+            const pick = ballot.picks?.[category.id];
+
+            if (pick) {
+              const nominee = category.nominees.find(n => getNomineeId(n) === pick);
+              const name = nominee ? getNomineeName(nominee, category) : pick;
+
+              td.textContent = name;
+
+              if (winner) {
+                if (pick === winner) {
+                  td.className = 'ballot-table__pick--correct';
+                } else {
+                  td.className = 'ballot-table__pick--wrong';
+                }
+              }
+            } else {
+              td.textContent = '-';
+              td.style.color = '#999';
+            }
+
+            tr.appendChild(td);
+          });
+
+          // Winner column
+          if (resultsCount > 0) {
+            const winnerTd = document.createElement('td');
+            if (winner) {
+              const winnerNominee = category.nominees.find(n => getNomineeId(n) === winner);
+              winnerTd.innerHTML = `<div class="ballot-table__winner">${winnerNominee ? getNomineeName(winnerNominee, category) : winner}</div>`;
+              winnerTd.style.background = 'rgba(184, 150, 12, 0.1)';
+            } else {
+              winnerTd.textContent = 'TBD';
+              winnerTd.style.color = 'var(--text-muted)';
+            }
+            tr.appendChild(winnerTd);
+          }
+
+          tableBody.appendChild(tr);
+        });
+
+        // Show celebration if all results are in
+        if (resultsCount === categories.length && !hasShownCelebration && scoredBallots.length > 0) {
+          hasShownCelebration = true;
+
+          // Find the winner (highest score, first if tie)
+          const winner = scoredBallots[0];
+
+          celebrationEl.classList.remove('hidden');
+          celebrationEl.style.display = 'flex';
+          celebrationEl.innerHTML = `
+            <div class="celebration__content">
+              <div class="celebration__trophy">***</div>
+              <h1 class="celebration__title">WINNER!</h1>
+              <p class="celebration__winner">${winner.username}</p>
+              <p class="celebration__score">${winner.score} / ${categories.length} correct</p>
+              <button class="btn btn--primary btn--lg mt-lg" onclick="document.getElementById('celebration').style.display='none'">
+                [Close]
+              </button>
+            </div>
+          `;
+
+          createConfetti();
+        }
+      }
+
+      // Initial load
+      await loadData();
+
+      // Set up real-time subscriptions if Supabase is configured
+      if (isSupabaseConfigured()) {
+        subscribeToBallots(() => loadData());
+        subscribeToResults(() => loadData());
+      }
+
+      // Also refresh on focus (for when coming back to tab)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          loadData();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

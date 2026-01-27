@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Movies - Oscar 2026 Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header" id="header"></header>
+
+  <main class="page">
+    <div class="container">
+      <div class="flex flex-between flex-center mb-lg" style="flex-wrap: wrap; gap: 1rem;">
+        <h1 class="mb-0">Nominated Movies</h1>
+        <div class="flex gap-sm">
+          <select id="sort-select" class="form-select" style="width: auto;">
+            <option value="nominations">Most Nominated</option>
+            <option value="title">Title A-Z</option>
+            <option value="watched">Watched First</option>
+            <option value="watchlist">Watchlist First</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="text-muted mb-lg" id="movie-count"></p>
+
+      <div class="movie-grid" id="movies-grid"></div>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    onReady(() => {
+      const grid = document.getElementById('movies-grid');
+      const sortSelect = document.getElementById('sort-select');
+      const countEl = document.getElementById('movie-count');
+
+      function renderMovies(sortBy = 'nominations') {
+        let movies = getAllMovies();
+
+        // Sort
+        switch (sortBy) {
+          case 'title':
+            movies.sort((a, b) => a.title.localeCompare(b.title));
+            break;
+          case 'watched':
+            movies.sort((a, b) => {
+              const aWatched = isWatched(a.id) ? 1 : 0;
+              const bWatched = isWatched(b.id) ? 1 : 0;
+              return bWatched - aWatched || b.nominations - a.nominations;
+            });
+            break;
+          case 'watchlist':
+            movies.sort((a, b) => {
+              const aList = isInWatchlist(a.id) ? 1 : 0;
+              const bList = isInWatchlist(b.id) ? 1 : 0;
+              return bList - aList || b.nominations - a.nominations;
+            });
+            break;
+          default: // nominations
+            movies.sort((a, b) => b.nominations - a.nominations);
+        }
+
+        grid.innerHTML = '';
+        movies.forEach(movie => {
+          grid.appendChild(createMovieCard(movie));
+        });
+
+        countEl.textContent = `${movies.length} movies nominated across ${getAllCategories().length} categories`;
+      }
+
+      sortSelect.addEventListener('change', (e) => {
+        renderMovies(e.target.value);
+      });
+
+      renderMovies();
+    });
+  </script>
+</body>
+</html>

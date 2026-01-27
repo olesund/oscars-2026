@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Categories - Oscar 2026 Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header" id="header"></header>
+
+  <main class="page">
+    <div class="container">
+      <h1 class="mb-sm">Categories</h1>
+      <p class="text-muted mb-xl">24 categories including Best Casting (new this year)</p>
+
+      <div id="categories-list"></div>
+    </div>
+  </main>
+
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    onReady(async () => {
+      const list = document.getElementById('categories-list');
+      const categories = getAllCategories();
+
+      // Get results for highlighting winners
+      const resultsData = await api_getResults();
+      const results = resultsData.data || {};
+
+      // Group categories
+      const groups = {
+        'Major Awards': ['best-picture', 'best-director', 'best-actor', 'best-actress', 'best-supporting-actor', 'best-supporting-actress'],
+        'Writing': ['best-adapted-screenplay', 'best-original-screenplay'],
+        'Animated & International': ['best-animated-feature', 'best-international-feature'],
+        'Documentary': ['best-documentary-feature', 'best-documentary-short'],
+        'Short Films': ['best-animated-short', 'best-live-action-short'],
+        'Music': ['best-original-score', 'best-original-song'],
+        'Technical': ['best-cinematography', 'best-film-editing', 'best-production-design', 'best-costume-design', 'best-makeup-hairstyling', 'best-sound', 'best-visual-effects', 'best-casting']
+      };
+
+      for (const [groupName, categoryIds] of Object.entries(groups)) {
+        // Group header
+        const groupHeader = document.createElement('h2');
+        groupHeader.className = 'mb-md mt-xl';
+        groupHeader.textContent = groupName;
+        list.appendChild(groupHeader);
+
+        // Categories in group
+        const groupContainer = document.createElement('div');
+        groupContainer.className = 'category-list';
+
+        categoryIds.forEach(catId => {
+          const category = getCategory(catId);
+          if (!category) return;
+
+          const winner = results[catId];
+
+          // Category header item
+          const item = document.createElement('div');
+          item.className = 'category-item';
+          item.dataset.categoryId = catId;
+          item.innerHTML = `
+            <span class="category-item__name">
+              ${winner ? '* ' : ''}${category.name}
+            </span>
+            <span>
+              <span class="category-item__count">${category.nominees.length}</span>
+              <span class="category-item__arrow">></span>
+            </span>
+          `;
+
+          // Nominees container (hidden by default)
+          const nomineesDiv = document.createElement('div');
+          nomineesDiv.className = 'category-nominees';
+          nomineesDiv.id = `nominees-${catId}`;
+
+          // Build nominees list
+          category.nominees.forEach(nominee => {
+            const nomineeId = getNomineeId(nominee);
+            const movie = nominee.movieId ? getMovie(nominee.movieId) : null;
+            const isWinner = winner && nomineeId === winner;
+
+            const nomineeItem = document.createElement('div');
+            nomineeItem.className = 'nominee-item';
+            if (isWinner) {
+              nomineeItem.style.background = 'var(--gold-light)';
+            }
+
+            const posterUrl = movie ? getPosterUrl(movie) : '';
+
+            nomineeItem.innerHTML = `
+              ${movie ? `<img class="nominee-item__poster" src="${posterUrl}" alt="${movie.title}">` : ''}
+              <div class="nominee-item__info">
+                <div class="nominee-item__name">
+                  ${isWinner ? '* WINNER: ' : ''}${getNomineeName(nominee, category)}
+                </div>
+                ${movie && getNomineeName(nominee, category) !== movie.title ? `
+                  <div class="nominee-item__movie">${movie.title}</div>
+                ` : ''}
+                ${nominee.country ? `<div class="nominee-item__movie">${nominee.country}</div>` : ''}
+              </div>
+            `;
+
+            if (movie) {
+              nomineeItem.style.cursor = 'pointer';
+              nomineeItem.addEventListener('click', () => {
+                navigateTo('movie.html', { id: movie.id });
+              });
+            }
+
+            nomineesDiv.appendChild(nomineeItem);
+          });
+
+          // Click to expand/collapse
+          item.addEventListener('click', () => {
+            const isExpanded = item.classList.contains('category-item--expanded');
+
+            // Close any open category
+            document.querySelectorAll('.category-item--expanded').forEach(el => {
+              el.classList.remove('category-item--expanded');
+            });
+            document.querySelectorAll('.category-nominees--visible').forEach(el => {
+              el.classList.remove('category-nominees--visible');
+            });
+
+            // Toggle this one
+            if (!isExpanded) {
+              item.classList.add('category-item--expanded');
+              nomineesDiv.classList.add('category-nominees--visible');
+            }
+          });
+
+          groupContainer.appendChild(item);
+          groupContainer.appendChild(nomineesDiv);
+        });
+
+        list.appendChild(groupContainer);
+      }
+    });
+  </script>
+</body>
+</html>
