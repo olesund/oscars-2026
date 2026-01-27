@@ -307,8 +307,8 @@ a:hover {
   color: var(--black);
 }
 
-.category-item:last-of-type,
-.category-item:has(+ .category-nominees--visible) {
+.category-item:has(+ .category-nominees--visible),
+.category-item:has(+ .category-nominees:last-child) {
   border-bottom: var(--border);
 }
 
@@ -492,6 +492,12 @@ a:hover {
   font-size: 0.9rem;
   background: var(--white);
   cursor: pointer;
+}
+
+/* Results page dropdown - constrain width */
+.winner-select {
+  width: auto;
+  max-width: 250px;
 }
 
 .form-textarea {
