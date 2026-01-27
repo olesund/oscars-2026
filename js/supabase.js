@@ -1,8 +1,8 @@
 // Supabase client for shared data (users, ballots, results)
 // You need to replace these with your actual Supabase project credentials
 
-const SUPABASE_URL = 'YOUR_SUPABASE_URL';
-const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const SUPABASE_URL = 'https://xclndtlabshengcspymn.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhjbG5kdGxhYnNoZW5nY3NweW1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0NzkwNTYsImV4cCI6MjA4NTA1NTA1Nn0.r5a1IcYrmAia4FQJtCLV7CcO16fnPTgmW4VU8_d7pGQ';
 
 // Check if Supabase is configured
 function isSupabaseConfigured() {
