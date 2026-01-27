@@ -307,7 +307,7 @@ a:hover {
   color: var(--black);
 }
 
-.category-item:last-child,
+.category-item:last-of-type,
 .category-item:has(+ .category-nominees--visible) {
   border-bottom: var(--border);
 }
