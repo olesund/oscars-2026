@@ -30,6 +30,13 @@ async function createUser(username) {
   const client = initSupabase();
   if (!client) return { error: 'Supabase not configured' };
 
+  // First check if user already exists
+  const existingUser = await getUserByUsername(username);
+  if (existingUser.data) {
+    return existingUser;
+  }
+
+  // User doesn't exist, create new one
   const { data, error } = await client
     .from('users')
     .insert([{ username: username.trim() }])
@@ -37,8 +44,8 @@ async function createUser(username) {
     .single();
 
   if (error) {
-    if (error.code === '23505') {
-      // Username already exists, fetch the existing user
+    // Handle race condition - duplicate username created between check and insert
+    if (error.code === '23505' || error.code === 'PGRST409' || error.message?.includes('duplicate') || error.message?.includes('unique')) {
       return await getUserByUsername(username);
     }
     return { error: error.message };
