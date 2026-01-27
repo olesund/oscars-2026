@@ -99,6 +99,7 @@ function renderHeader() {
     { page: 'index', label: 'Home', href: 'index.html' },
     { page: 'movies', label: 'Movies', href: 'movies.html' },
     { page: 'categories', label: 'Categories', href: 'categories.html' },
+    { page: 'community', label: 'Community', href: 'community.html' },
     { page: 'my-list', label: 'My List', href: 'my-list.html' },
     { page: 'ballot', label: 'Ballot', href: 'ballot.html' },
     { page: 'ballots', label: 'All Ballots', href: 'ballots.html' },

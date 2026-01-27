@@ -949,3 +949,82 @@ a:hover {
   0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
   100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
 }
+
+/* Review Cards */
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.review-card {
+  background: var(--off-white);
+  border: var(--border-light);
+  padding: var(--spacing-md);
+}
+
+.review-card--with-movie {
+  background: var(--white);
+  border: var(--border);
+}
+
+.review-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.review-card__author {
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--black);
+  text-decoration: none;
+}
+
+.review-card__author:hover {
+  color: var(--gold);
+}
+
+.review-card__movie {
+  color: var(--black);
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.review-card__movie:hover {
+  color: var(--gold);
+}
+
+.review-card__rating {
+  font-size: 1rem;
+  color: var(--gold);
+  white-space: nowrap;
+}
+
+.review-card__text {
+  color: var(--black);
+  font-style: italic;
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.5;
+}
+
+.review-card__date {
+  color: var(--gray);
+  font-size: 0.8rem;
+  margin-bottom: 0;
+}
+
+/* User Badge on Profile */
+.user-badge {
+  border: var(--border);
+  background: var(--gold-light);
+  color: var(--black);
+  font-weight: bold;
+}
+
+/* Gap utilities */
+.gap-lg { gap: var(--spacing-lg); }

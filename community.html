@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Community - Oscar 2026 Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="header" id="header"></header>
+
+  <main class="page">
+    <div class="container">
+      <h1 class="mb-md">Community</h1>
+      <p class="text-muted mb-xl">See what everyone is watching and their ratings</p>
+
+      <!-- Tabs -->
+      <div class="tabs mb-xl">
+        <button class="tab tab--active" data-tab="activity">Recent Activity</button>
+        <button class="tab" data-tab="top-rated">Top Rated</button>
+        <button class="tab" data-tab="most-watched">Most Watched</button>
+        <button class="tab" data-tab="members">Members</button>
+      </div>
+
+      <!-- Recent Activity Tab -->
+      <div class="tab-content tab-content--active" id="tab-activity">
+        <div id="activity-content">
+          <div class="loading">
+            <div class="loading__spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Rated Tab -->
+      <div class="tab-content" id="tab-top-rated">
+        <div id="top-rated-content">
+          <div class="loading">
+            <div class="loading__spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Most Watched Tab -->
+      <div class="tab-content" id="tab-most-watched">
+        <div id="most-watched-content">
+          <div class="loading">
+            <div class="loading__spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Members Tab -->
+      <div class="tab-content" id="tab-members">
+        <div id="members-content">
+          <div class="loading">
+            <div class="loading__spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-state__icon">[  ]</div>
+        <h2 class="empty-state__title">No activity yet</h2>
+        <p class="empty-state__text">Be the first to watch and rate a movie!</p>
+        <a href="movies.html" class="btn btn--primary">Browse Movies</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    onReady(async () => {
+      const tabs = document.querySelectorAll('.tab');
+      const tabContents = document.querySelectorAll('.tab-content');
+      const emptyState = document.getElementById('empty-state');
+
+      let allWatched = [];
+      let allUsers = [];
+
+      // Tab switching
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const targetTab = tab.dataset.tab;
+
+          tabs.forEach(t => t.classList.remove('tab--active'));
+          tab.classList.add('tab--active');
+
+          tabContents.forEach(tc => {
+            tc.classList.remove('tab-content--active');
+            if (tc.id === `tab-${targetTab}`) {
+              tc.classList.add('tab-content--active');
+            }
+          });
+        });
+      });
+
+      // Load all data
+      async function loadData() {
+        const [watchedResult, usersResult] = await Promise.all([
+          api_getAllWatched(),
+          api_getAllUsers()
+        ]);
+
+        allWatched = watchedResult.data || [];
+        allUsers = usersResult.data || [];
+
+        if (allWatched.length === 0) {
+          emptyState.classList.remove('hidden');
+          document.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
+          return;
+        }
+
+        emptyState.classList.add('hidden');
+        renderActivity();
+        renderTopRated();
+        renderMostWatched();
+        renderMembers();
+      }
+
+      // Render recent activity
+      function renderActivity() {
+        const content = document.getElementById('activity-content');
+
+        if (allWatched.length === 0) {
+          content.innerHTML = '<p class="text-muted">No activity yet.</p>';
+          return;
+        }
+
+        // Sort by most recent
+        const sorted = [...allWatched].sort((a, b) =>
+          new Date(b.watched_at) - new Date(a.watched_at)
+        );
+
+        content.innerHTML = `
+          <div class="review-list">
+            ${sorted.slice(0, 50).map(entry => {
+              const movie = getMovie(entry.movie_id);
+              if (!movie) return '';
+
+              const ratingDisplay = entry.rating
+                ? '[' + '*'.repeat(entry.rating) + '-'.repeat(5 - entry.rating) + ']'
+                : '';
+
+              return `
+                <div class="review-card review-card--with-movie">
+                  <div class="review-card__header">
+                    <div>
+                      <a href="user.html?u=${encodeURIComponent(entry.users?.username || 'Unknown')}" class="review-card__author">
+                        ${entry.users?.username || 'Unknown'}
+                      </a>
+                      <span class="text-muted">watched</span>
+                      <a href="movie.html?id=${movie.id}" class="review-card__movie">
+                        ${movie.title}
+                      </a>
+                    </div>
+                    <span class="review-card__rating">${ratingDisplay}</span>
+                  </div>
+                  ${entry.note ? `<p class="review-card__text">"${entry.note}"</p>` : ''}
+                  <p class="review-card__date">${formatDate(entry.watched_at)}</p>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
+
+      // Render top rated movies
+      function renderTopRated() {
+        const content = document.getElementById('top-rated-content');
+
+        // Group by movie and calculate average rating
+        const movieStats = {};
+        allWatched.forEach(entry => {
+          if (!movieStats[entry.movie_id]) {
+            movieStats[entry.movie_id] = { total: 0, count: 0, ratingCount: 0 };
+          }
+          movieStats[entry.movie_id].count++;
+          if (entry.rating > 0) {
+            movieStats[entry.movie_id].total += entry.rating;
+            movieStats[entry.movie_id].ratingCount++;
+          }
+        });
+
+        // Calculate averages and sort
+        const movieList = Object.entries(movieStats)
+          .map(([movieId, stats]) => ({
+            movieId,
+            movie: getMovie(movieId),
+            avgRating: stats.ratingCount > 0 ? stats.total / stats.ratingCount : 0,
+            watchCount: stats.count,
+            ratingCount: stats.ratingCount
+          }))
+          .filter(m => m.movie && m.ratingCount >= 1) // Must have at least 1 rating
+          .sort((a, b) => b.avgRating - a.avgRating);
+
+        if (movieList.length === 0) {
+          content.innerHTML = '<p class="text-muted">No ratings yet.</p>';
+          return;
+        }
+
+        content.innerHTML = `
+          <div class="leaderboard">
+            <div class="leaderboard__header">
+              <h2 class="leaderboard__title">Highest Rated</h2>
+              <p class="leaderboard__subtitle">${movieList.length} movies rated</p>
+            </div>
+            <ul class="leaderboard__list">
+              ${movieList.slice(0, 20).map((item, index) => {
+                const ratingDisplay = '[' + '*'.repeat(Math.round(item.avgRating)) + '-'.repeat(5 - Math.round(item.avgRating)) + ']';
+                return `
+                  <li class="leaderboard__item" style="cursor: pointer;" onclick="navigateTo('movie.html', { id: '${item.movieId}' })">
+                    <span class="leaderboard__rank">${index + 1}</span>
+                    <span class="leaderboard__name" style="flex: 1;">${item.movie.title}</span>
+                    <span class="leaderboard__score" style="color: var(--gold);">${ratingDisplay}</span>
+                    <span class="text-muted" style="min-width: 80px; text-align: right;">${item.avgRating.toFixed(1)} (${item.ratingCount})</span>
+                  </li>
+                `;
+              }).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      // Render most watched movies
+      function renderMostWatched() {
+        const content = document.getElementById('most-watched-content');
+
+        // Count watchers per movie
+        const movieCounts = {};
+        allWatched.forEach(entry => {
+          movieCounts[entry.movie_id] = (movieCounts[entry.movie_id] || 0) + 1;
+        });
+
+        // Sort by watch count
+        const movieList = Object.entries(movieCounts)
+          .map(([movieId, count]) => ({
+            movieId,
+            movie: getMovie(movieId),
+            count
+          }))
+          .filter(m => m.movie)
+          .sort((a, b) => b.count - a.count);
+
+        if (movieList.length === 0) {
+          content.innerHTML = '<p class="text-muted">No movies watched yet.</p>';
+          return;
+        }
+
+        content.innerHTML = `
+          <div class="leaderboard">
+            <div class="leaderboard__header">
+              <h2 class="leaderboard__title">Most Watched</h2>
+              <p class="leaderboard__subtitle">${movieList.length} movies tracked</p>
+            </div>
+            <ul class="leaderboard__list">
+              ${movieList.slice(0, 20).map((item, index) => `
+                <li class="leaderboard__item" style="cursor: pointer;" onclick="navigateTo('movie.html', { id: '${item.movieId}' })">
+                  <span class="leaderboard__rank">${index + 1}</span>
+                  <span class="leaderboard__name" style="flex: 1;">${item.movie.title}</span>
+                  <span class="leaderboard__score">${item.count} viewer${item.count !== 1 ? 's' : ''}</span>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      // Render members list
+      function renderMembers() {
+        const content = document.getElementById('members-content');
+
+        // Count stats per user
+        const userStats = {};
+        allWatched.forEach(entry => {
+          const username = entry.users?.username;
+          if (!username) return;
+
+          if (!userStats[username]) {
+            userStats[username] = { watched: 0, totalRating: 0, ratedCount: 0 };
+          }
+          userStats[username].watched++;
+          if (entry.rating > 0) {
+            userStats[username].totalRating += entry.rating;
+            userStats[username].ratedCount++;
+          }
+        });
+
+        // Sort by watch count
+        const userList = Object.entries(userStats)
+          .map(([username, stats]) => ({
+            username,
+            watched: stats.watched,
+            avgRating: stats.ratedCount > 0 ? (stats.totalRating / stats.ratedCount).toFixed(1) : null
+          }))
+          .sort((a, b) => b.watched - a.watched);
+
+        if (userList.length === 0) {
+          content.innerHTML = '<p class="text-muted">No members yet.</p>';
+          return;
+        }
+
+        content.innerHTML = `
+          <div class="leaderboard">
+            <div class="leaderboard__header">
+              <h2 class="leaderboard__title">Members</h2>
+              <p class="leaderboard__subtitle">${userList.length} active member${userList.length !== 1 ? 's' : ''}</p>
+            </div>
+            <ul class="leaderboard__list">
+              ${userList.map((user, index) => `
+                <li class="leaderboard__item" style="cursor: pointer;" onclick="navigateTo('user.html', { u: '${encodeURIComponent(user.username)}' })">
+                  <span class="leaderboard__rank">${index + 1}</span>
+                  <span class="leaderboard__name" style="flex: 1;">${user.username}</span>
+                  <span class="text-muted" style="min-width: 100px;">${user.watched} watched</span>
+                  ${user.avgRating ? `<span class="leaderboard__score" style="color: var(--gold);">${user.avgRating} avg</span>` : ''}
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      // Initial load
+      await loadData();
+
+      // Set up real-time subscriptions if Supabase is configured
+      if (isSupabaseConfigured()) {
+        subscribeToWatched(() => loadData());
+      }
+
+      // Also refresh on focus
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          loadData();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

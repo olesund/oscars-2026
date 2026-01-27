@@ -25,7 +25,7 @@
   <script src="js/supabase.js"></script>
   <script src="js/app.js"></script>
   <script>
-    onReady(() => {
+    onReady(async () => {
       const content = document.getElementById('movie-content');
       const movieId = getUrlParam('id');
 
@@ -63,6 +63,86 @@
       const watched = isWatched(movie.id);
       const watchedInfo = getWatchedInfo(movie.id);
       const inWatchlist = isInWatchlist(movie.id);
+
+      // Load community reviews
+      let communityReviews = [];
+      async function loadReviews() {
+        const reviewsResult = await api_getMovieReviews(movieId);
+        if (!reviewsResult.error) {
+          communityReviews = reviewsResult.data;
+        }
+      }
+      await loadReviews();
+
+      // Helper to render community reviews section
+      function renderCommunityReviews() {
+        // Filter out current user's review (shown separately above)
+        const currentUser = getLocalUser();
+        const otherReviews = communityReviews.filter(r =>
+          !currentUser || r.users?.id !== currentUser.id
+        );
+
+        // Calculate community stats
+        const totalRatings = communityReviews.filter(r => r.rating > 0).length;
+        const avgRating = totalRatings > 0
+          ? (communityReviews.reduce((sum, r) => sum + (r.rating || 0), 0) / totalRatings).toFixed(1)
+          : null;
+
+        if (communityReviews.length === 0) {
+          return `
+            <div class="card mt-xl">
+              <h3 class="mb-md">Community Reviews</h3>
+              <p class="text-muted">No one has reviewed this movie yet. Be the first!</p>
+            </div>
+          `;
+        }
+
+        const avgDisplay = avgRating
+          ? '[' + '*'.repeat(Math.round(avgRating)) + '-'.repeat(5 - Math.round(avgRating)) + ']'
+          : '[-----]';
+
+        return `
+          <div class="card mt-xl">
+            <div class="flex flex-between flex-center mb-lg" style="flex-wrap: wrap; gap: 1rem;">
+              <h3 class="mb-0">Community Reviews</h3>
+              <div class="flex gap-lg flex-center">
+                ${avgRating ? `
+                  <div class="text-center">
+                    <div style="font-size: 1.25rem; color: var(--gold);">${avgDisplay}</div>
+                    <div class="text-muted" style="font-size: 0.8rem;">${avgRating} avg</div>
+                  </div>
+                ` : ''}
+                <div class="text-center">
+                  <div style="font-size: 1.25rem;">${communityReviews.length}</div>
+                  <div class="text-muted" style="font-size: 0.8rem;">viewer${communityReviews.length !== 1 ? 's' : ''}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="review-list">
+              ${otherReviews.length === 0 && currentUser ? `
+                <p class="text-muted">You're the only one who has reviewed this movie so far!</p>
+              ` : otherReviews.map(review => {
+                const reviewRating = review.rating
+                  ? '[' + '*'.repeat(review.rating) + '-'.repeat(5 - review.rating) + ']'
+                  : '';
+                return `
+                  <div class="review-card">
+                    <div class="review-card__header">
+                      <a href="user.html?u=${encodeURIComponent(review.users?.username || 'Unknown')}" class="review-card__author">
+                        ${review.users?.username || 'Unknown'}
+                      </a>
+                      <span class="review-card__rating">${reviewRating}</span>
+                    </div>
+                    ${review.note ? `<p class="review-card__text">"${review.note}"</p>` : ''}
+                    <p class="review-card__date">${formatDate(review.watched_at)}</p>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }
 
       function render() {
         const currentWatched = isWatched(movie.id);
@@ -124,6 +204,9 @@
               </div>
             </div>
           </div>
+
+          <!-- Community Reviews Section -->
+          ${renderCommunityReviews()}
 
           <!-- Rating Modal -->
           <div id="rating-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 1000;">
@@ -237,6 +320,9 @@
           } else {
             await markAsWatched(movie.id, selectedRating, note);
           }
+
+          // Reload community reviews to reflect the change
+          await loadReviews();
 
           document.getElementById('rating-modal').classList.add('hidden');
           document.getElementById('rating-modal').style.display = 'none';

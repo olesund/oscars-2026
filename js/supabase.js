@@ -602,3 +602,160 @@ async function api_updateWatched(userId, movieId, rating, note) {
 async function api_removeFromWatched(userId, movieId) {
   return useMockData() ? mockRemoveFromWatched(userId, movieId) : removeFromWatchedDb(userId, movieId);
 }
+
+// ============ PUBLIC COMMUNITY DATA ============
+
+// Get all watched entries from all users (for community page)
+async function getAllWatchedFromDb() {
+  const client = initSupabase();
+  if (!client) return { error: 'Supabase not configured' };
+
+  const { data, error } = await client
+    .from('watched')
+    .select(`
+      *,
+      users (
+        id,
+        username
+      )
+    `)
+    .order('watched_at', { ascending: false });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { data: data || [] };
+}
+
+// Get all reviews for a specific movie
+async function getMovieReviewsFromDb(movieId) {
+  const client = initSupabase();
+  if (!client) return { error: 'Supabase not configured' };
+
+  const { data, error } = await client
+    .from('watched')
+    .select(`
+      rating,
+      note,
+      watched_at,
+      users (
+        id,
+        username
+      )
+    `)
+    .eq('movie_id', movieId)
+    .order('watched_at', { ascending: false });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { data: data || [] };
+}
+
+// Get a specific user's watched list (public profile)
+async function getUserWatchedFromDb(username) {
+  const client = initSupabase();
+  if (!client) return { error: 'Supabase not configured' };
+
+  // First get the user
+  const userResult = await getUserByUsername(username);
+  if (userResult.error || !userResult.data) {
+    return { error: userResult.error || 'User not found' };
+  }
+
+  const { data, error } = await client
+    .from('watched')
+    .select('*')
+    .eq('user_id', userResult.data.id)
+    .order('watched_at', { ascending: false });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {
+    data: data || [],
+    user: userResult.data
+  };
+}
+
+// Mock implementations for community data
+async function mockGetAllWatched() {
+  const allWatched = [];
+  for (const userId of Object.keys(MOCK_DATA.watched)) {
+    const user = MOCK_DATA.users.find(u => u.id === userId);
+    for (const [movieId, info] of Object.entries(MOCK_DATA.watched[userId])) {
+      allWatched.push({
+        movie_id: movieId,
+        rating: info.rating,
+        note: info.note,
+        watched_at: info.watchedAt,
+        users: user
+      });
+    }
+  }
+  return { data: allWatched.sort((a, b) => new Date(b.watched_at) - new Date(a.watched_at)) };
+}
+
+async function mockGetMovieReviews(movieId) {
+  const reviews = [];
+  for (const userId of Object.keys(MOCK_DATA.watched)) {
+    const user = MOCK_DATA.users.find(u => u.id === userId);
+    const movieData = MOCK_DATA.watched[userId][movieId];
+    if (movieData) {
+      reviews.push({
+        rating: movieData.rating,
+        note: movieData.note,
+        watched_at: movieData.watchedAt,
+        users: user
+      });
+    }
+  }
+  return { data: reviews.sort((a, b) => new Date(b.watched_at) - new Date(a.watched_at)) };
+}
+
+async function mockGetUserWatched(username) {
+  const user = MOCK_DATA.users.find(u => u.username === username);
+  if (!user) return { error: 'User not found' };
+
+  const watched = [];
+  const userWatched = MOCK_DATA.watched[user.id] || {};
+  for (const [movieId, info] of Object.entries(userWatched)) {
+    watched.push({
+      movie_id: movieId,
+      rating: info.rating,
+      note: info.note,
+      watched_at: info.watchedAt
+    });
+  }
+  return {
+    data: watched.sort((a, b) => new Date(b.watched_at) - new Date(a.watched_at)),
+    user: user
+  };
+}
+
+// API wrappers for community data
+async function api_getAllWatched() {
+  return useMockData() ? mockGetAllWatched() : getAllWatchedFromDb();
+}
+
+async function api_getMovieReviews(movieId) {
+  return useMockData() ? mockGetMovieReviews(movieId) : getMovieReviewsFromDb(movieId);
+}
+
+async function api_getUserWatched(username) {
+  return useMockData() ? mockGetUserWatched(username) : getUserWatchedFromDb(username);
+}
+
+// Subscribe to watched changes (for real-time updates)
+function subscribeToWatched(callback) {
+  const client = initSupabase();
+  if (!client) return null;
+
+  return client
+    .channel('watched-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'watched' }, callback)
+    .subscribe();
+}
