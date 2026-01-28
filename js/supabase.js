@@ -756,10 +756,10 @@ async function getAllWatchlistsFromDb() {
         id,
         username
       )
-    `)
-    .order('created_at', { ascending: false });
+    `);
 
   if (error) {
+    console.error('Error fetching watchlists:', error);
     return { error: error.message };
   }
 

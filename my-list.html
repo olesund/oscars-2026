@@ -64,10 +64,8 @@
         return;
       }
 
-      // Load user data if not already loaded
-      if (!isDataLoaded()) {
-        await loadUserData();
-      }
+      // Always refresh user data from database to ensure sync
+      await loadUserData();
 
       const tabs = document.querySelectorAll('.tab');
       const tabContents = document.querySelectorAll('.tab-content');
@@ -96,8 +94,17 @@
       function updateCounts() {
         const watchlist = getWatchlist();
         const watched = getWatched();
+        const watchedKeys = Object.keys(watched);
+
         watchlistCountEl.textContent = watchlist.length;
-        watchedCountEl.textContent = Object.keys(watched).length;
+        watchedCountEl.textContent = watchedKeys.length;
+
+        // Debug: Log any movie IDs that don't have matching data
+        watchedKeys.forEach(id => {
+          if (!getMovie(id)) {
+            console.warn('Watched movie ID not found in data:', id);
+          }
+        });
       }
 
       function renderWatchlist() {
