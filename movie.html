@@ -163,11 +163,28 @@
             </div>
             <div>
               <h1 class="mb-sm">${movie.title}</h1>
-              <p class="text-muted mb-lg">${movie.year} | Directed by ${movie.director}</p>
+              <p class="text-muted mb-md">${movie.year} | Directed by ${movie.director}</p>
 
-              <div class="mb-lg">
-                <span class="stat-card__value text-gold">${movie.nominations}</span>
-                <span class="text-muted"> nomination${movie.nominations > 1 ? 's' : ''}</span>
+              ${movie.synopsis ? `
+                <p class="mb-lg" style="font-style: italic; line-height: 1.6;">${movie.synopsis}</p>
+              ` : ''}
+
+              <div class="flex gap-lg mb-lg" style="flex-wrap: wrap; align-items: center;">
+                <div>
+                  <span class="stat-card__value text-gold">${movie.nominations}</span>
+                  <span class="text-muted"> nomination${movie.nominations > 1 ? 's' : ''}</span>
+                </div>
+                ${movie.streaming ? `
+                  <div class="streaming-info" style="padding: 0.5rem 1rem; background: var(--off-white); border: var(--border);">
+                    <span class="text-muted">Watch on:</span>
+                    ${movie.streaming.url ? `
+                      <a href="${movie.streaming.url}" target="_blank" rel="noopener" style="font-weight: bold;">${movie.streaming.service}</a>
+                    ` : `
+                      <span style="font-weight: bold;">${movie.streaming.service}</span>
+                    `}
+                    ${movie.streaming.note ? `<br><span class="text-muted" style="font-size: 0.8rem;">${movie.streaming.note}</span>` : ''}
+                  </div>
+                ` : ''}
               </div>
 
               <div class="flex gap-md mb-xl" style="flex-wrap: wrap;">

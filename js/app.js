@@ -37,10 +37,10 @@ function navigateTo(page, params = {}) {
 // Generate poster placeholder using canvas (works offline)
 function generatePosterDataUrl(title, type = null) {
   const canvas = document.createElement('canvas');
-  // Short films get a wider aspect ratio (16:9ish)
   const isShort = type && type.includes('short');
+  // All posters use same aspect ratio (2:3) for consistent grid
   canvas.width = 300;
-  canvas.height = isShort ? 200 : 450;
+  canvas.height = 450;
   const ctx = canvas.getContext('2d');
 
   // Background - different colors for different short types
@@ -73,22 +73,22 @@ function generatePosterDataUrl(title, type = null) {
   // Short film label at top
   if (isShort && label) {
     ctx.fillStyle = accentColor;
-    ctx.font = 'bold 11px Courier New, monospace';
+    ctx.font = 'bold 14px Courier New, monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(label, canvas.width / 2, 28);
+    ctx.fillText(label, canvas.width / 2, 35);
 
     // Divider line
     ctx.strokeStyle = accentColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(20, 38);
-    ctx.lineTo(canvas.width - 20, 38);
+    ctx.moveTo(20, 50);
+    ctx.lineTo(canvas.width - 20, 50);
     ctx.stroke();
   }
 
   // Title text
   ctx.fillStyle = accentColor;
-  ctx.font = isShort ? 'bold 16px Courier New, monospace' : 'bold 24px Courier New, monospace';
+  ctx.font = 'bold 24px Courier New, monospace';
   ctx.textAlign = 'center';
 
   // Word wrap the title
@@ -109,8 +109,8 @@ function generatePosterDataUrl(title, type = null) {
   if (currentLine) lines.push(currentLine);
 
   // Draw centered text
-  const lineHeight = isShort ? 22 : 32;
-  const titleAreaStart = isShort ? 50 : 0;
+  const lineHeight = 32;
+  const titleAreaStart = isShort ? 60 : 0;
   const titleAreaHeight = canvas.height - titleAreaStart;
   const startY = titleAreaStart + (titleAreaHeight - lines.length * lineHeight) / 2;
   lines.forEach((line, i) => {

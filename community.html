@@ -16,9 +16,10 @@
 
       <!-- Tabs -->
       <div class="tabs mb-xl">
-        <button class="tab tab--active" data-tab="activity">Recent Activity</button>
+        <button class="tab tab--active" data-tab="activity">Activity</button>
         <button class="tab" data-tab="top-rated">Top Rated</button>
         <button class="tab" data-tab="most-watched">Most Watched</button>
+        <button class="tab" data-tab="unwatched">Unwatched</button>
         <button class="tab" data-tab="members">Members</button>
       </div>
 
@@ -43,6 +44,15 @@
       <!-- Most Watched Tab -->
       <div class="tab-content" id="tab-most-watched">
         <div id="most-watched-content">
+          <div class="loading">
+            <div class="loading__spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unwatched Tab -->
+      <div class="tab-content" id="tab-unwatched">
+        <div id="unwatched-content">
           <div class="loading">
             <div class="loading__spinner"></div>
           </div>
@@ -99,17 +109,21 @@
         });
       });
 
+      let allWatchlists = [];
+
       // Load all data
       async function loadData() {
-        const [watchedResult, usersResult] = await Promise.all([
+        const [watchedResult, usersResult, watchlistResult] = await Promise.all([
           api_getAllWatched(),
-          api_getAllUsers()
+          api_getAllUsers(),
+          api_getAllWatchlists()
         ]);
 
         allWatched = watchedResult.data || [];
         allUsers = usersResult.data || [];
+        allWatchlists = watchlistResult.data || [];
 
-        if (allWatched.length === 0) {
+        if (allWatched.length === 0 && allWatchlists.length === 0) {
           emptyState.classList.remove('hidden');
           document.querySelectorAll('.tab-content').forEach(tc => tc.classList.add('hidden'));
           return;
@@ -119,6 +133,7 @@
         renderActivity();
         renderTopRated();
         renderMostWatched();
+        renderUnwatched();
         renderMembers();
       }
 
@@ -270,24 +285,122 @@
         `;
       }
 
-      // Render members list
+      // Render unwatched movies (movies no one has seen yet)
+      function renderUnwatched() {
+        const content = document.getElementById('unwatched-content');
+
+        // Get all movies
+        const allMovies = getAllMovies();
+
+        // Get set of watched movie IDs
+        const watchedMovieIds = new Set(allWatched.map(w => w.movie_id));
+
+        // Find movies no one has watched - exclude shorts from this list by default
+        const unwatchedMovies = allMovies.filter(m =>
+          !watchedMovieIds.has(m.id) && !m.type?.includes('short')
+        );
+
+        // Also find shorts no one has watched
+        const unwatchedShorts = allMovies.filter(m =>
+          !watchedMovieIds.has(m.id) && m.type?.includes('short')
+        );
+
+        if (unwatchedMovies.length === 0 && unwatchedShorts.length === 0) {
+          content.innerHTML = `
+            <div class="card card--gold text-center">
+              <h3 class="mb-md">Amazing!</h3>
+              <p>Your group has watched every nominated movie!</p>
+            </div>
+          `;
+          return;
+        }
+
+        content.innerHTML = `
+          <div class="card mb-lg">
+            <h3 class="mb-md">Movies Nobody Has Seen Yet</h3>
+            <p class="text-muted mb-lg">These nominated films haven't been watched by anyone in your group.</p>
+
+            ${unwatchedMovies.length > 0 ? `
+              <h4 class="mb-md">Feature Films (${unwatchedMovies.length})</h4>
+              <div class="movie-grid mb-xl">
+                ${unwatchedMovies.map(movie => `
+                  <div class="movie-card" style="cursor: pointer;" onclick="navigateTo('movie.html', { id: '${movie.id}' })">
+                    <img class="movie-card__poster" src="${getPosterUrl(movie)}" alt="${movie.title}">
+                    ${movie.nominations > 1 ? `<span class="movie-card__nominations">${movie.nominations}</span>` : ''}
+                    <div class="movie-card__info">
+                      <div class="movie-card__title">${movie.title}</div>
+                      <div class="movie-card__meta">${movie.nominations} nom${movie.nominations > 1 ? 's' : ''}</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            ${unwatchedShorts.length > 0 ? `
+              <h4 class="mb-md">Short Films (${unwatchedShorts.length})</h4>
+              <ul class="leaderboard__list" style="border: var(--border);">
+                ${unwatchedShorts.map(movie => {
+                  const typeLabel = movie.type === 'animated-short' ? 'Animated' :
+                                   movie.type === 'documentary-short' ? 'Documentary' : 'Live Action';
+                  const typeColor = movie.type === 'animated-short' ? '#9b59b6' :
+                                   movie.type === 'documentary-short' ? '#27ae60' : '#e74c3c';
+                  return `
+                    <li class="leaderboard__item" style="cursor: pointer;" onclick="navigateTo('movie.html', { id: '${movie.id}' })">
+                      <span style="color: ${typeColor}; min-width: 100px;">${typeLabel}</span>
+                      <span class="leaderboard__name" style="flex: 1;">${movie.title}</span>
+                    </li>
+                  `;
+                }).join('')}
+              </ul>
+            ` : ''}
+          </div>
+
+          ${allWatched.length > 0 ? `
+            <div class="card">
+              <h3 class="mb-md">Progress</h3>
+              <p class="mb-md">
+                <span class="stat-card__value text-gold">${allMovies.length - unwatchedMovies.length - unwatchedShorts.length}</span>
+                <span class="text-muted"> of ${allMovies.length} movies watched by at least one person</span>
+              </p>
+              <div class="progress">
+                <div class="progress__bar" style="width: ${Math.round(((allMovies.length - unwatchedMovies.length - unwatchedShorts.length) / allMovies.length) * 100)}%"></div>
+              </div>
+            </div>
+          ` : ''}
+        `;
+      }
+
+      // Render members list with their watchlists and watched lists
       function renderMembers() {
         const content = document.getElementById('members-content');
 
         // Count stats per user
         const userStats = {};
+
+        // Process watched entries
         allWatched.forEach(entry => {
           const username = entry.users?.username;
           if (!username) return;
 
           if (!userStats[username]) {
-            userStats[username] = { watched: 0, totalRating: 0, ratedCount: 0 };
+            userStats[username] = { watched: [], watchlist: [], totalRating: 0, ratedCount: 0 };
           }
-          userStats[username].watched++;
+          userStats[username].watched.push(entry);
           if (entry.rating > 0) {
             userStats[username].totalRating += entry.rating;
             userStats[username].ratedCount++;
           }
+        });
+
+        // Process watchlist entries
+        allWatchlists.forEach(entry => {
+          const username = entry.users?.username;
+          if (!username) return;
+
+          if (!userStats[username]) {
+            userStats[username] = { watched: [], watchlist: [], totalRating: 0, ratedCount: 0 };
+          }
+          userStats[username].watchlist.push(entry.movie_id);
         });
 
         // Sort by watch count
@@ -295,9 +408,10 @@
           .map(([username, stats]) => ({
             username,
             watched: stats.watched,
+            watchlist: stats.watchlist,
             avgRating: stats.ratedCount > 0 ? (stats.totalRating / stats.ratedCount).toFixed(1) : null
           }))
-          .sort((a, b) => b.watched - a.watched);
+          .sort((a, b) => b.watched.length - a.watched.length);
 
         if (userList.length === 0) {
           content.innerHTML = '<p class="text-muted">No members yet.</p>';
@@ -305,7 +419,7 @@
         }
 
         content.innerHTML = `
-          <div class="leaderboard">
+          <div class="leaderboard mb-xl">
             <div class="leaderboard__header">
               <h2 class="leaderboard__title">Members</h2>
               <p class="leaderboard__subtitle">${userList.length} active member${userList.length !== 1 ? 's' : ''}</p>
@@ -315,12 +429,56 @@
                 <li class="leaderboard__item" style="cursor: pointer;" onclick="navigateTo('user.html', { u: '${encodeURIComponent(user.username)}' })">
                   <span class="leaderboard__rank">${index + 1}</span>
                   <span class="leaderboard__name" style="flex: 1;">${user.username}</span>
-                  <span class="text-muted" style="min-width: 100px;">${user.watched} watched</span>
+                  <span class="text-muted" style="min-width: 100px;">${user.watched.length} watched</span>
+                  <span class="text-muted" style="min-width: 80px;">${user.watchlist.length} to watch</span>
                   ${user.avgRating ? `<span class="leaderboard__score" style="color: var(--gold);">${user.avgRating} avg</span>` : ''}
                 </li>
               `).join('')}
             </ul>
           </div>
+
+          <!-- User Lists Detail -->
+          <h3 class="mb-lg">User Lists</h3>
+          ${userList.map(user => `
+            <div class="card mb-lg">
+              <div class="flex flex-between flex-center mb-md" style="flex-wrap: wrap; gap: 0.5rem;">
+                <h4 class="mb-0" style="cursor: pointer;" onclick="navigateTo('user.html', { u: '${encodeURIComponent(user.username)}' })">${user.username}</h4>
+                <div class="flex gap-md">
+                  <span class="text-muted">${user.watched.length} watched</span>
+                  <span class="text-muted">${user.watchlist.length} to watch</span>
+                </div>
+              </div>
+
+              ${user.watched.length > 0 ? `
+                <div class="mb-md">
+                  <p class="text-muted mb-sm" style="font-size: 0.85rem;">Watched:</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    ${user.watched.slice(0, 10).map(w => {
+                      const movie = getMovie(w.movie_id);
+                      if (!movie) return '';
+                      const ratingStr = w.rating ? ' [' + '*'.repeat(w.rating) + ']' : '';
+                      return `<a href="movie.html?id=${movie.id}" class="btn btn--sm" style="font-size: 0.7rem;">${movie.title}${ratingStr}</a>`;
+                    }).join('')}
+                    ${user.watched.length > 10 ? `<span class="text-muted" style="align-self: center;">+${user.watched.length - 10} more</span>` : ''}
+                  </div>
+                </div>
+              ` : ''}
+
+              ${user.watchlist.length > 0 ? `
+                <div>
+                  <p class="text-muted mb-sm" style="font-size: 0.85rem;">To Watch:</p>
+                  <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    ${user.watchlist.slice(0, 10).map(movieId => {
+                      const movie = getMovie(movieId);
+                      if (!movie) return '';
+                      return `<a href="movie.html?id=${movie.id}" class="btn btn--sm btn--secondary" style="font-size: 0.7rem;">${movie.title}</a>`;
+                    }).join('')}
+                    ${user.watchlist.length > 10 ? `<span class="text-muted" style="align-self: center;">+${user.watchlist.length - 10} more</span>` : ''}
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          `).join('')}
         `;
       }
 

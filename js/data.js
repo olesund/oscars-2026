@@ -20,7 +20,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Ryan Coogler',
       nominations: 16,
-      poster: 'https://image.tmdb.org/t/p/w500/cFxcdKqOlTD61reXv9S7mX7kJSU.jpg'
+      synopsis: 'Michael B. Jordan stars as twin brothers who return to their hometown in the Jim Crow-era South and encounter a terrifying supernatural threat. Ryan Coogler\'s genre-blending horror film mixes period drama with vampire mythology.',
+      streaming: { service: 'Max', url: 'https://www.max.com' }
     },
     'one-battle-after-another': {
       id: 'one-battle-after-another',
@@ -28,7 +29,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Paul Thomas Anderson',
       nominations: 13,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=One+Battle+After+Another'
+      synopsis: 'Leonardo DiCaprio, Sean Penn, Benicio Del Toro, Teyana Taylor, and Regina Hall star in Paul Thomas Anderson\'s action-packed political dramedy about power, ambition, and the battles we fight.',
+      streaming: { service: 'Max', url: 'https://www.max.com' }
     },
     'frankenstein': {
       id: 'frankenstein',
@@ -36,7 +38,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Guillermo del Toro',
       nominations: 9,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Frankenstein'
+      synopsis: 'Oscar Isaac and Jacob Elordi star in Guillermo del Toro\'s visionary adaptation of Mary Shelley\'s classic novel, exploring the tragic relationship between creator and creation.',
+      streaming: { service: 'Netflix', url: 'https://www.netflix.com' }
     },
     'sentimental-value': {
       id: 'sentimental-value',
@@ -44,7 +47,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Joachim Trier',
       nominations: 9,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Sentimental+Value'
+      synopsis: 'Renate Reinsve, Stellan Skarsgård, Inga Ibsdotter Lilleaas and Elle Fanning star in this quiet family drama from director Joachim Trier. Winner of the Grand Prix at Cannes.',
+      streaming: { service: 'VOD', note: 'Available to rent on Apple TV, Amazon, and most VOD platforms' }
     },
     'marty-supreme': {
       id: 'marty-supreme',
@@ -52,7 +56,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Josh Safdie',
       nominations: 7,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Marty+Supreme'
+      synopsis: 'Timothée Chalamet stars in Josh Safdie\'s chaotic sports dramedy about an ambitious and eccentric table tennis champion navigating fame, competition, and self-destruction.',
+      streaming: { service: 'Theaters', note: 'Currently in select theaters only' }
     },
     'hamnet': {
       id: 'hamnet',
@@ -60,7 +65,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Chloé Zhao',
       nominations: 6,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Hamnet'
+      synopsis: 'Jessie Buckley and Paul Mescal star in Chloé Zhao\'s adaptation of the acclaimed novel about Shakespeare\'s family and the death of his only son. Winner of the People\'s Choice Award at TIFF and Best Motion Picture – Drama at the Golden Globes.',
+      streaming: { service: 'Theaters', note: 'Currently in select theaters only' }
     },
     'bugonia': {
       id: 'bugonia',
@@ -68,7 +74,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Yorgos Lanthimos',
       nominations: 4,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Bugonia'
+      synopsis: 'Emma Stone and Jesse Plemons star in Yorgos Lanthimos\'s dark comedy about two conspiracy theorists who kidnap a tech CEO they believe is secretly an alien overlord.',
+      streaming: { service: 'Peacock', url: 'https://www.peacocktv.com' }
     },
     'the-secret-agent': {
       id: 'the-secret-agent',
@@ -76,7 +83,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Walter Salles',
       nominations: 4,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=The+Secret+Agent'
+      synopsis: 'Wagner Moura stars in Walter Salles\' thriller about a covert operative navigating political intrigue in Brazil. The film represents Brazil in the International Feature category.',
+      streaming: { service: 'Theaters', note: 'Currently in select theaters only' }
     },
     'train-dreams': {
       id: 'train-dreams',
@@ -84,7 +92,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Clint Bentley',
       nominations: 4,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Train+Dreams'
+      synopsis: 'Based on Denis Johnson\'s novella, this lyrical drama follows a day laborer in the early 20th century American West as he endures hardship and loss while building the railroads.',
+      streaming: { service: 'Netflix', url: 'https://www.netflix.com' }
     },
     'f1': {
       id: 'f1',
@@ -92,7 +101,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Joseph Kosinski',
       nominations: 4,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=F1'
+      synopsis: 'Brad Pitt, Damson Idris, Kerry Condon, Tobias Menzies and Javier Bardem star in this high-octane racing drama from Top Gun: Maverick director Joseph Kosinski.',
+      streaming: { service: 'Apple TV+', url: 'https://tv.apple.com' }
     },
     'blue-moon': {
       id: 'blue-moon',
@@ -100,7 +110,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Richard Linklater',
       nominations: 2,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Blue+Moon'
+      synopsis: 'Ethan Hawke stars in Richard Linklater\'s intimate drama exploring a pivotal night in the life of a songwriter at a crossroads.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'if-i-had-legs': {
       id: 'if-i-had-legs',
@@ -108,7 +119,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Mary Bronstein',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=If+I+Had+Legs'
+      synopsis: 'Rose Byrne delivers an Oscar-nominated performance as a mother struggling with an increasingly difficult life and a challenging daughter with mysterious health issues.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'song-sung-blue': {
       id: 'song-sung-blue',
@@ -116,7 +128,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Song+Sung+Blue'
+      synopsis: 'Kate Hudson stars in this musical drama that earned her a Best Actress nomination.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'weapons': {
       id: 'weapons',
@@ -124,7 +137,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Zach Cregger',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Weapons'
+      synopsis: 'Amy Madigan delivers a supporting performance in Zach Cregger\'s thriller, following up on his breakout hit Barbarian.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'it-was-just-an-accident': {
       id: 'it-was-just-an-accident',
@@ -132,7 +146,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Jafar Panahi',
       nominations: 2,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=It+Was+Just+An+Accident'
+      synopsis: 'Iranian master filmmaker Jafar Panahi\'s latest work, representing France in the International Feature category. A meditation on fate, justice, and the nature of accidents.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'avatar-fire-and-ash': {
       id: 'avatar-fire-and-ash',
@@ -140,7 +155,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'James Cameron',
       nominations: 2,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Avatar+3'
+      synopsis: 'James Cameron continues the epic saga of Pandora as Jake Sully and Neytiri face new threats and explore previously unseen regions of the alien world.',
+      streaming: { service: 'Theaters/Disney+', note: 'In theaters, streaming on Disney+ later' }
     },
     'sirat': {
       id: 'sirat',
@@ -148,7 +164,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 2,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Sirat'
+      synopsis: 'Spain\'s entry for International Feature Film, a powerful drama exploring themes of faith, destiny, and moral crossroads.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'the-voice-of-hind-rajab': {
       id: 'the-voice-of-hind-rajab',
@@ -156,7 +173,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Voice+of+Hind+Rajab'
+      synopsis: 'Tunisia\'s entry for International Feature Film, a documentary-style drama that examines the human cost of conflict.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'kokuho': {
       id: 'kokuho',
@@ -164,7 +182,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Kokuho'
+      synopsis: 'A transformative character study featuring remarkable makeup and hairstyling work that earned an Oscar nomination.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'the-smashing-machine': {
       id: 'the-smashing-machine',
@@ -172,7 +191,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Benny Safdie',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Smashing+Machine'
+      synopsis: 'Benny Safdie\'s intense drama about MMA fighter Mark Kerr, featuring transformative makeup work that earned an Oscar nomination.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'the-ugly-stepsister': {
       id: 'the-ugly-stepsister',
@@ -180,7 +200,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Ugly+Stepsister'
+      synopsis: 'A dark reimagining of the Cinderella fairy tale, featuring elaborate makeup and hairstyling that earned an Oscar nomination.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'jurassic-world-rebirth': {
       id: 'jurassic-world-rebirth',
@@ -188,7 +209,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Gareth Edwards',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Jurassic+World'
+      synopsis: 'Gareth Edwards takes the helm for the next chapter in the Jurassic franchise, featuring groundbreaking visual effects that earned an Oscar nomination.',
+      streaming: { service: 'Theaters/Peacock', note: 'In theaters, streaming on Peacock later' }
     },
     'the-lost-bus': {
       id: 'the-lost-bus',
@@ -196,7 +218,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=The+Lost+Bus'
+      synopsis: 'A visually stunning film featuring groundbreaking visual effects work that earned an Oscar nomination.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'diane-warren-relentless': {
       id: 'diane-warren-relentless',
@@ -204,7 +227,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Diane+Warren'
+      synopsis: 'A documentary about legendary songwriter Diane Warren, featuring the Oscar-nominated song "Dear Me".',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'viva-verdi': {
       id: 'viva-verdi',
@@ -212,7 +236,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Viva+Verdi'
+      synopsis: 'A celebration of the legendary opera composer Giuseppe Verdi, featuring the Oscar-nominated song "Sweet Dreams of Joy".',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     // Animated features
     'arco': {
@@ -221,7 +246,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Arco'
+      synopsis: 'An innovative animated feature that earned a nomination for Best Animated Feature Film.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'elio': {
       id: 'elio',
@@ -229,7 +255,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Pixar',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Elio'
+      synopsis: 'Pixar\'s latest adventure follows a young boy who is mistakenly identified as Earth\'s ambassador to the intergalactic community.',
+      streaming: { service: 'Disney+', url: 'https://www.disneyplus.com' }
     },
     'kpop-demon-hunters': {
       id: 'kpop-demon-hunters',
@@ -237,7 +264,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 2,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=KPop+Demon+Hunters'
+      synopsis: 'An animated adventure featuring a K-pop group that secretly battles demons, with the Oscar-nominated song "Golden".',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'little-amelie': {
       id: 'little-amelie',
@@ -245,7 +273,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Little+Amelie'
+      synopsis: 'A poetic animated feature exploring a young girl\'s imaginative world and her relationship with the natural elements.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'zootopia-2': {
       id: 'zootopia-2',
@@ -253,7 +282,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Disney',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Zootopia+2'
+      synopsis: 'Judy Hopps and Nick Wilde return for another adventure in the vibrant animal metropolis, tackling new mysteries and challenges.',
+      streaming: { service: 'Disney+', url: 'https://www.disneyplus.com' }
     },
     // Documentary features
     'the-alabama-solution': {
@@ -262,7 +292,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Alabama+Solution'
+      synopsis: 'A documentary examining social and political issues in Alabama, nominated for Best Documentary Feature.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'come-see-me-in-the-good-light': {
       id: 'come-see-me-in-the-good-light',
@@ -270,7 +301,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Good+Light'
+      synopsis: 'An intimate documentary portrait nominated for Best Documentary Feature.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'cutting-through-rocks': {
       id: 'cutting-through-rocks',
@@ -278,7 +310,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Cutting+Through+Rocks'
+      synopsis: 'A documentary about perseverance and determination in the face of impossible obstacles.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'mr-nobody-against-putin': {
       id: 'mr-nobody-against-putin',
@@ -286,7 +319,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Mr+Nobody'
+      synopsis: 'A documentary following an ordinary citizen\'s extraordinary stand against authoritarianism in Russia.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     'the-perfect-neighbor': {
       id: 'the-perfect-neighbor',
@@ -294,7 +328,8 @@ const OSCAR_DATA = {
       year: 2025,
       director: 'Unknown',
       nominations: 1,
-      poster: 'https://placehold.co/300x450/1a1a2e/d4af37?text=Perfect+Neighbor'
+      synopsis: 'A documentary examining the complexities of community, trust, and what it means to be a good neighbor.',
+      streaming: { service: 'Coming soon', note: 'Streaming release TBA' }
     },
     // Documentary Short Films
     'all-empty-rooms': {

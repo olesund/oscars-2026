@@ -743,7 +743,49 @@ async function mockGetUserWatched(username) {
   };
 }
 
+// Get all watchlist entries from all users (for community page)
+async function getAllWatchlistsFromDb() {
+  const client = initSupabase();
+  if (!client) return { error: 'Supabase not configured' };
+
+  const { data, error } = await client
+    .from('watchlist')
+    .select(`
+      *,
+      users (
+        id,
+        username
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { data: data || [] };
+}
+
+// Mock implementation for all watchlists
+async function mockGetAllWatchlists() {
+  const allWatchlists = [];
+  for (const userId of Object.keys(MOCK_DATA.watchlist)) {
+    const user = MOCK_DATA.users.find(u => u.id === userId);
+    for (const movieId of MOCK_DATA.watchlist[userId]) {
+      allWatchlists.push({
+        movie_id: movieId,
+        users: user
+      });
+    }
+  }
+  return { data: allWatchlists };
+}
+
 // API wrappers for community data
+async function api_getAllWatchlists() {
+  return useMockData() ? mockGetAllWatchlists() : getAllWatchlistsFromDb();
+}
+
 async function api_getAllWatched() {
   return useMockData() ? mockGetAllWatched() : getAllWatchedFromDb();
 }

@@ -293,10 +293,6 @@ a:hover {
   border-width: 2px;
 }
 
-.movie-card--short .movie-card__poster {
-  aspect-ratio: 3/2;
-}
-
 .movie-card--animated {
   border-color: #9b59b6;
 }
