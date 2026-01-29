@@ -798,6 +798,46 @@ async function api_getUserWatched(username) {
   return useMockData() ? mockGetUserWatched(username) : getUserWatchedFromDb(username);
 }
 
+// Get a specific user's watchlist (public profile)
+async function getUserWatchlistFromDb(username) {
+  const client = initSupabase();
+  if (!client) return { error: 'Supabase not configured' };
+
+  // First get the user
+  const userResult = await getUserByUsername(username);
+  if (userResult.error || !userResult.data) {
+    return { error: userResult.error || 'User not found' };
+  }
+
+  const { data, error } = await client
+    .from('watchlist')
+    .select('movie_id')
+    .eq('user_id', userResult.data.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return {
+    data: (data || []).map(w => w.movie_id),
+    user: userResult.data
+  };
+}
+
+async function mockGetUserWatchlist(username) {
+  const user = MOCK_DATA.users.find(u => u.username === username);
+  if (!user) return { error: 'User not found' };
+
+  return {
+    data: MOCK_DATA.watchlist[user.id] || [],
+    user: user
+  };
+}
+
+async function api_getUserWatchlist(username) {
+  return useMockData() ? mockGetUserWatchlist(username) : getUserWatchlistFromDb(username);
+}
+
 // Subscribe to watched changes (for real-time updates)
 function subscribeToWatched(callback) {
   const client = initSupabase();

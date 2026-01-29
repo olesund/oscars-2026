@@ -295,9 +295,26 @@
         // Get set of watched movie IDs
         const watchedMovieIds = new Set(allWatched.map(w => w.movie_id));
 
-        // Find movies no one has watched - exclude shorts from this list by default
-        const unwatchedMovies = allMovies.filter(m =>
-          !watchedMovieIds.has(m.id) && !m.type?.includes('short')
+        // Count how many users want to watch each unwatched movie
+        const wantToWatchCounts = {};
+        allWatchlists.forEach(entry => {
+          const movieId = entry.movie_id;
+          if (!watchedMovieIds.has(movieId)) {
+            wantToWatchCounts[movieId] = (wantToWatchCounts[movieId] || 0) + 1;
+          }
+        });
+
+        // Get movies on someone's watchlist, sorted by popularity
+        const mostWantedMovies = Object.entries(wantToWatchCounts)
+          .map(([movieId, count]) => ({ movie: getMovie(movieId), count }))
+          .filter(item => item.movie && !item.movie.type?.includes('short'))
+          .sort((a, b) => b.count - a.count);
+
+        // Find movies no one has watched AND no one has on their list
+        const completelyUnwatched = allMovies.filter(m =>
+          !watchedMovieIds.has(m.id) &&
+          !wantToWatchCounts[m.id] &&
+          !m.type?.includes('short')
         );
 
         // Also find shorts no one has watched
@@ -305,7 +322,9 @@
           !watchedMovieIds.has(m.id) && m.type?.includes('short')
         );
 
-        if (unwatchedMovies.length === 0 && unwatchedShorts.length === 0) {
+        const totalUnwatched = mostWantedMovies.length + completelyUnwatched.length + unwatchedShorts.length;
+
+        if (totalUnwatched === 0) {
           content.innerHTML = `
             <div class="card card--gold text-center">
               <h3 class="mb-md">Amazing!</h3>
@@ -316,57 +335,69 @@
         }
 
         content.innerHTML = `
-          <div class="card mb-lg">
-            <h3 class="mb-md">Movies Nobody Has Seen Yet</h3>
-            <p class="text-muted mb-lg">These nominated films haven't been watched by anyone in your group.</p>
-
-            ${unwatchedMovies.length > 0 ? `
-              <h4 class="mb-md">Feature Films (${unwatchedMovies.length})</h4>
-              <div class="movie-grid mb-xl">
-                ${unwatchedMovies.map(movie => `
-                  <div class="movie-card" style="cursor: pointer;" onclick="navigateTo('movie.html', { id: '${movie.id}' })">
-                    <img class="movie-card__poster" src="${getPosterUrl(movie)}" alt="${movie.title}">
-                    ${movie.nominations > 1 ? `<span class="movie-card__nominations">${movie.nominations}</span>` : ''}
-                    <div class="movie-card__info">
-                      <div class="movie-card__title">${movie.title}</div>
-                      <div class="movie-card__meta">${movie.nominations} nom${movie.nominations > 1 ? 's' : ''}</div>
-                    </div>
-                  </div>
+          ${mostWantedMovies.length > 0 ? `
+            <div class="card mb-lg">
+              <h3 class="mb-md">Most Wanted</h3>
+              <p class="text-muted mb-lg">Movies people want to see but haven't watched yet.</p>
+              <ul class="leaderboard__list" style="border: var(--border);">
+                ${mostWantedMovies.map(item => `
+                  <li class="leaderboard__item" style="cursor: pointer;" onclick="navigateTo('movie.html', { id: '${item.movie.id}' })">
+                    <span class="leaderboard__name" style="flex: 1;">${item.movie.title}</span>
+                    <span style="color: var(--gold); min-width: 80px; text-align: right;">${item.count} want${item.count > 1 ? '' : 's'}</span>
+                    <span class="text-muted" style="min-width: 60px; text-align: right;">${item.movie.nominations} nom${item.movie.nominations > 1 ? 's' : ''}</span>
+                  </li>
                 `).join('')}
-              </div>
-            ` : ''}
+              </ul>
+            </div>
+          ` : ''}
 
-            ${unwatchedShorts.length > 0 ? `
-              <h4 class="mb-md">Short Films (${unwatchedShorts.length})</h4>
+          ${completelyUnwatched.length > 0 ? `
+            <div class="card mb-lg">
+              <h3 class="mb-md">Off the Radar</h3>
+              <p class="text-muted mb-lg">Nobody has watched or added these to their list yet.</p>
+              <ul class="leaderboard__list" style="border: var(--border);">
+                ${completelyUnwatched.map(movie => `
+                  <li class="leaderboard__item" style="cursor: pointer;" onclick="navigateTo('movie.html', { id: '${movie.id}' })">
+                    <span class="leaderboard__name" style="flex: 1;">${movie.title}</span>
+                    <span class="text-muted" style="min-width: 60px; text-align: right;">${movie.nominations} nom${movie.nominations > 1 ? 's' : ''}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          ` : ''}
+
+          ${unwatchedShorts.length > 0 ? `
+            <div class="card mb-lg">
+              <h3 class="mb-md">Unwatched Shorts (${unwatchedShorts.length})</h3>
               <ul class="leaderboard__list" style="border: var(--border);">
                 ${unwatchedShorts.map(movie => {
                   const typeLabel = movie.type === 'animated-short' ? 'Animated' :
                                    movie.type === 'documentary-short' ? 'Documentary' : 'Live Action';
                   const typeColor = movie.type === 'animated-short' ? '#9b59b6' :
                                    movie.type === 'documentary-short' ? '#27ae60' : '#e74c3c';
+                  const wantCount = wantToWatchCounts[movie.id] || 0;
                   return `
                     <li class="leaderboard__item" style="cursor: pointer;" onclick="navigateTo('movie.html', { id: '${movie.id}' })">
                       <span style="color: ${typeColor}; min-width: 100px;">${typeLabel}</span>
                       <span class="leaderboard__name" style="flex: 1;">${movie.title}</span>
+                      ${wantCount > 0 ? `<span style="color: var(--gold);">${wantCount} want${wantCount > 1 ? '' : 's'}</span>` : ''}
                     </li>
                   `;
                 }).join('')}
               </ul>
-            ` : ''}
-          </div>
-
-          ${allWatched.length > 0 ? `
-            <div class="card">
-              <h3 class="mb-md">Progress</h3>
-              <p class="mb-md">
-                <span class="stat-card__value text-gold">${allMovies.length - unwatchedMovies.length - unwatchedShorts.length}</span>
-                <span class="text-muted"> of ${allMovies.length} movies watched by at least one person</span>
-              </p>
-              <div class="progress">
-                <div class="progress__bar" style="width: ${Math.round(((allMovies.length - unwatchedMovies.length - unwatchedShorts.length) / allMovies.length) * 100)}%"></div>
-              </div>
             </div>
           ` : ''}
+
+          <div class="card">
+            <h3 class="mb-md">Progress</h3>
+            <p class="mb-md">
+              <span class="stat-card__value text-gold">${allMovies.length - totalUnwatched}</span>
+              <span class="text-muted"> of ${allMovies.length} movies watched by at least one person</span>
+            </p>
+            <div class="progress">
+              <div class="progress__bar" style="width: ${Math.round(((allMovies.length - totalUnwatched) / allMovies.length) * 100)}%"></div>
+            </div>
+          </div>
         `;
       }
 
